@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 
 export interface Room {
-  id: string;
+  roomId: string;
   players: [
     {
       id: string;
@@ -16,9 +16,9 @@ export class GameService {
   rooms: Room[] = [];
 
   createRoom(clientId: string, userName: string) {
-    const roomID = randomUUID();
+    const roomId = randomUUID();
     const room: Room = {
-      id: roomID,
+      roomId,
       players: [
         {
           id: clientId,
@@ -34,7 +34,7 @@ export class GameService {
     clientId: string,
     { roomId, userName }: { roomId: string; userName: string },
   ) {
-    const roomState = this.rooms.find((room) => room.id === roomId);
+    const roomState = this.rooms.find((room) => room.roomId === roomId);
     if (roomState) {
       if (!roomState.players.find((player) => player.id === clientId)) {
         roomState.players.push({

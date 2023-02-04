@@ -36,7 +36,7 @@ export class Gateway implements OnModuleInit {
     @ConnectedSocket() client: Socket,
   ) {
     const room = this.gameService.createRoom(client.id, message.userName);
-    client.join(room.id);
+    client.join(room.roomId);
     client.emit('room-state', room);
   }
 
