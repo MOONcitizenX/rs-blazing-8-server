@@ -8,6 +8,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GameService } from 'src/gameService/gameService';
+import {
+  CreateRoomClientEvent,
+  JoinRoomClientEvent,
+} from 'src/webSocketsTypes';
 
 @WebSocketGateway(5555, {
   cors: {
@@ -28,7 +32,7 @@ export class Gateway implements OnModuleInit {
 
   @SubscribeMessage('create-room')
   onCreateRoom(
-    @MessageBody() message: { userName: string },
+    @MessageBody() message: CreateRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
     const room = this.gameService.createRoom(client.id, message.userName);
@@ -38,7 +42,7 @@ export class Gateway implements OnModuleInit {
 
   @SubscribeMessage('join-room')
   onJoinRoom(
-    @MessageBody() message: { roomId: string; userName: string },
+    @MessageBody() message: JoinRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
     const roomState = this.gameService.joinRoom(client.id, message);
