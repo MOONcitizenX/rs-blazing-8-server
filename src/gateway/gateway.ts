@@ -27,7 +27,8 @@ export class Gateway implements OnModuleInit {
 
   onModuleInit() {
     this.server.on('connection', async (socket) => {
-      console.log((socket.request as any).cookies);
+      // socket.request.session.id = '123123123123';
+      console.log(socket.request.session.id);
     });
   }
 
