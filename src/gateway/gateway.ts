@@ -17,6 +17,7 @@ import {
   cors: {
     origin: '*',
   },
+  cookie: true,
 })
 export class Gateway implements OnModuleInit {
   @WebSocketServer()
@@ -25,8 +26,8 @@ export class Gateway implements OnModuleInit {
   constructor(private gameService: GameService) {}
 
   onModuleInit() {
-    this.server.on('connection', (socket) => {
-      console.log(socket.id, ' Connected');
+    this.server.on('connection', async (socket) => {
+      console.log((socket.request as any).cookies);
     });
   }
 
