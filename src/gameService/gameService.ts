@@ -1,51 +1,81 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-
-export interface Room {
-  roomId: string;
-  players: [
-    {
-      id: string;
-      name: string;
-    },
-  ];
-}
+import {
+  CreateRoomClientEvent,
+  JoinRoomClientEvent,
+} from 'src/webSocketsTypes';
+import { Room } from './roomService';
 
 @Injectable()
 export class GameService {
   rooms: Room[] = [];
 
-  createRoom(clientId: string, userName: string) {
-    const roomId = randomUUID();
-    const room: Room = {
-      roomId,
-      players: [
-        {
-          id: clientId,
-          name: userName,
-        },
-      ],
-    };
+  createRoom(
+    userId: string,
+    { userName, avatarId }: CreateRoomClientEvent['payload'],
+  ) {
+    const room = new Room(userId, userName, avatarId);
     this.rooms.push(room);
     return room;
   }
 
   joinRoom(
-    clientId: string,
-    { roomId, userName }: { roomId: string; userName: string },
+    userId: string,
+    { roomId, userName, avatarId }: JoinRoomClientEvent['payload'],
   ) {
-    const roomState = this.rooms.find((room) => room.roomId === roomId);
-    if (roomState) {
-      if (!roomState.players.find((player) => player.id === clientId)) {
-        roomState.players.push({
-          id: clientId,
-          name: userName,
-        });
+    const room = this.findRoom('room', roomId);
+    if (room) {
+      const newRoom = room.addNewPlayer({ userId, userName, avatarId });
+      return newRoom;
+    }
+    return null;
+  }
+
+  leaveRoom(roomId: string, userId: string) {
+    const roomState = this.findRoom('room', roomId);
+    // Handle lobby client leave
+    if (roomState && roomState.status === 'lobby') {
+      const playerIndex = roomState.players.findIndex(
+        (player) => player.id === userId,
+      );
+      if (playerIndex !== -1) {
+        roomState.players.splice(playerIndex, 1);
         return roomState;
-      } else {
+      }
+    }
+
+    //Handle game client leave
+    if (roomState && roomState.status === 'playing') {
+      const playerIndex = roomState.players.findIndex(
+        (player) => player.id === userId,
+      );
+      if (playerIndex !== -1) {
+        roomState.players[playerIndex].online = false;
         return roomState;
       }
     }
     return null;
+  }
+
+  reconnect(userId: string) {
+    const roomState = this.findRoom('user', userId);
+    const player = roomState?.findUserById(userId);
+    if (roomState && player) {
+      player.online = true;
+      return roomState;
+    }
+    return null;
+  }
+
+  findRoom(by: 'room' | 'user', id: string) {
+    if (by === 'room') {
+      const room = this.rooms.find((room) => {
+        room.players.find((player) => player.id === id);
+      });
+      return room;
+    }
+    if (by === 'user') {
+      const room = this.rooms.find((room) => room.roomId === id);
+      return room;
+    }
   }
 }

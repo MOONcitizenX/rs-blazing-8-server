@@ -1,7 +1,8 @@
-import { OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -17,19 +18,26 @@ import {
   cors: {
     origin: '*',
   },
-  cookie: true,
 })
-export class Gateway implements OnModuleInit {
+export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
   constructor(private gameService: GameService) {}
-
-  onModuleInit() {
-    this.server.on('connection', async (socket) => {
-      // socket.request.session.id = '123123123123';
-      console.log(socket.request.session.id);
-    });
+  handleDisconnect(client: Socket) {
+    console.log('disconnect happened', client.data.userId);
+    const roomState = this.gameService.reconnect(client.data.userId);
+    if (roomState) {
+      this.onLeaveRoom(client);
+    }
+  }
+  handleConnection(client: Socket, ...args: any[]) {
+    console.log('connected again', client.data.userId);
+    const roomState = this.gameService.reconnect(client.data.userId);
+    if (roomState) {
+      client.join(roomState.roomId);
+      client.emit('room-state', roomState);
+    }
   }
 
   @SubscribeMessage('create-room')
@@ -37,7 +45,7 @@ export class Gateway implements OnModuleInit {
     @MessageBody() message: CreateRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
-    const room = this.gameService.createRoom(client.id, message.userName);
+    const room = this.gameService.createRoom(client.data.userId, message);
     client.join(room.roomId);
     client.emit('room-state', room);
   }
@@ -47,11 +55,37 @@ export class Gateway implements OnModuleInit {
     @MessageBody() message: JoinRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
-    const roomState = this.gameService.joinRoom(client.id, message);
-    console.log(roomState);
+    const roomState = this.gameService.joinRoom(client.data.userId, message);
     if (roomState) {
       client.join(message.roomId);
+    } else {
+      client.emit('error', { message: 'No such room exists' });
     }
     this.server.to(message.roomId).emit('room-state', roomState);
+  }
+
+  @SubscribeMessage('leave-room')
+  onLeaveRoom(@ConnectedSocket() client: Socket) {
+    const roomId = [...client.rooms][1];
+    const roomState = this.gameService.leaveRoom(roomId, client.data.userId);
+
+    if (roomState) {
+      this.server.to(roomId).emit('room-state', roomState);
+      client.emit('leave-success');
+    } else {
+      client.emit('error', { message: 'No such room or player exists' });
+    }
+  }
+
+  @SubscribeMessage('start-game')
+  async onStartGame(@ConnectedSocket() client: Socket) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      room.startNewGame();
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      sockets.forEach((socket) => {
+        socket.emit('room-state', room.getUserState(socket.data.userId));
+      });
+    }
   }
 }

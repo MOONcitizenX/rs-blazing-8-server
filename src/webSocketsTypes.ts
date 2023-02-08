@@ -1,11 +1,12 @@
-import { Room } from './gameService/gameService';
-
 // From front to back
+
+import { Room } from './gameService/roomService';
 
 export interface CreateRoomClientEvent {
   event: 'create-room';
   payload: {
     userName: string;
+    avatarId: string;
   };
 }
 
@@ -14,11 +15,31 @@ export interface JoinRoomClientEvent {
   payload: {
     roomId: string;
     userName: string;
+    avatarId: string;
   };
+}
+
+export interface LeaveRoomClientEvent {
+  event: 'leave-room';
+}
+
+export interface StartGameClientEvent {
+  event: 'start-game';
 }
 
 // From back to front
 export interface RoomStateServerEvent {
   event: 'room-state';
   payload: Room | null;
+}
+
+export interface GetMeServerEvent {
+  event: 'get-me';
+  payload: {
+    id: string;
+  };
+}
+
+export interface LeaveSuccessServerEvent {
+  event: 'leave-success';
 }
