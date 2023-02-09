@@ -67,13 +67,13 @@ export class GameService {
   }
 
   findRoom(by: 'room' | 'user', id: string) {
-    if (by === 'room') {
+    if (by === 'user') {
       const room = this.rooms.find((room) => {
         room.players.find((player) => player.id === id);
       });
       return room;
     }
-    if (by === 'user') {
+    if (by === 'room') {
       const room = this.rooms.find((room) => room.roomId === id);
       return room;
     }

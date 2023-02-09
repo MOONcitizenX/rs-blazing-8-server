@@ -71,7 +71,7 @@ export class Room {
   }
 
   findUserById(userId: string) {
-    return this.players.find((player) => player.id === userId);
+    return this.players.find((player) => player.id !== userId);
   }
 
   getUserState(this: Room, userId: string) {
