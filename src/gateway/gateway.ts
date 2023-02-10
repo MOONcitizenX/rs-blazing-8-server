@@ -59,7 +59,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (roomState) {
       client.join(message.roomId);
     } else {
-      client.emit('error', { message: 'No such room exists' });
+      client.emit('error', { message: 'No such room exists or room is full' });
     }
     this.server.to(message.roomId).emit('room-state', roomState);
   }
