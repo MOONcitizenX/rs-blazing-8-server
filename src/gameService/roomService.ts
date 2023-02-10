@@ -57,7 +57,7 @@ export class Room {
   }
 
   addNewPlayer({ userId, userName, avatarId }: Record<string, string>) {
-    if (this.findUserById(userId) && this.players.length <= this.maxPlayers) {
+    if (!this.findUserById(userId) && this.players.length <= this.maxPlayers) {
       this.players.push({
         id: userId,
         name: userName,
@@ -71,7 +71,7 @@ export class Room {
   }
 
   findUserById(userId: string) {
-    return this.players.find((player) => player.id !== userId);
+    return this.players.find((player) => player.id === userId);
   }
 
   getUserState(this: Room, userId: string) {
