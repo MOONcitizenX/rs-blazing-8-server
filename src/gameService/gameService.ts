@@ -59,10 +59,10 @@ export class GameService {
   reconnect(userId: string) {
     const roomState = this.findRoom('user', userId);
     const player = roomState?.findUserById(userId);
-    // console.log(roomState);
-    if (roomState && player) {
+    const personalRoomState = roomState?.getUserState(userId);
+    if (personalRoomState && player) {
       player.online = true;
-      return roomState;
+      return personalRoomState;
     }
     return null;
   }

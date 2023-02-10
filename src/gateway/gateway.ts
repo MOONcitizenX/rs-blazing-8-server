@@ -38,6 +38,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(roomState.roomId);
       client.emit('room-state', roomState);
     }
+    console.log(roomState?.players);
   }
 
   @SubscribeMessage('create-room')
@@ -65,12 +66,19 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('leave-room')
-  onLeaveRoom(@ConnectedSocket() client: Socket) {
+  async onLeaveRoom(@ConnectedSocket() client: Socket) {
     const roomId = [...client.rooms][1];
-    const roomState = this.gameService.leaveRoom(roomId, client.data.userId);
+    const room = this.gameService.leaveRoom(roomId, client.data.userId);
 
-    if (roomState) {
-      this.server.to(roomId).emit('room-state', roomState);
+    if (room) {
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      const leftPlayer = room.findUserById(client.data.userId);
+      if (leftPlayer) {
+        leftPlayer.online = false;
+      }
+      sockets.forEach((socket) => {
+        socket.emit('room-state', room.getUserState(socket.data.userId));
+      });
       client.emit('leave-success');
     } else {
       client.emit('error', { message: 'No such room or player exists' });
