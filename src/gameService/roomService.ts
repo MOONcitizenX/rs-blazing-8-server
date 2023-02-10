@@ -5,7 +5,7 @@ import { pick, shuffle } from 'lodash';
 export type RoomStatus = 'lobby' | 'playing';
 
 export class Room {
-  private closedDeck: Card[] = cards;
+  private closedDeck: Card[] = [];
   private openDeck: Card[] = [];
   private maxPlayers = 5;
 
@@ -40,10 +40,9 @@ export class Room {
 
   startNewGame() {
     const shuffledCards = shuffle(cards);
-    this.players.map((player) => ({
-      ...player,
-      cards: shuffledCards.splice(-5, 5),
-    }));
+    this.players.forEach(
+      (player) => (player.cards = shuffledCards.splice(-5, 5)),
+    );
     this.openDeck = [];
     this.status = 'playing';
   }
