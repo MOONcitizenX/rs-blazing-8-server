@@ -25,14 +25,14 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private gameService: GameService) {}
   handleDisconnect(client: Socket) {
-    console.log('disconnect happened', client.data.userId);
+    console.log(client.data.userId, ' disconnected');
     const roomState = this.gameService.reconnect(client.data.userId);
     if (roomState) {
       this.onLeaveRoom(client);
     }
   }
   handleConnection(client: Socket, ...args: any[]) {
-    console.log('connected again', client.data.userId);
+    console.log(client.data.userId, ' connected');
     const roomState = this.gameService.reconnect(client.data.userId);
     if (roomState) {
       client.join(roomState.roomId);
