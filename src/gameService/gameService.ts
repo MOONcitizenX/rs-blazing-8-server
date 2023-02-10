@@ -23,7 +23,7 @@ export class GameService {
     { roomId, userName, avatarId }: JoinRoomClientEvent['payload'],
   ) {
     const room = this.findRoom('room', roomId);
-    if (room) {
+    if (room && room.players.length < 5) {
       const newRoom = room.addNewPlayer({ userId, userName, avatarId });
       return newRoom;
     }
