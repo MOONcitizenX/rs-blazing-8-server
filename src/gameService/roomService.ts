@@ -1,12 +1,12 @@
 import { randomUUID } from 'crypto';
-import { Card, cards } from 'src/data/cards';
+import { cards } from 'src/data/cards';
 import { pick, shuffle } from 'lodash';
 
 export type RoomStatus = 'lobby' | 'playing';
 
 export class Room {
-  private closedDeck: Card[] = [];
-  private openDeck: Card[] = [];
+  private closedDeck: string[] = [];
+  private openDeck: string[] = [];
   private maxPlayers = 5;
 
   roomId: string;
@@ -18,7 +18,7 @@ export class Room {
       name: string;
       avatarId: string;
       online: boolean;
-      cards: Card[];
+      cards: string[];
     },
   ];
 
@@ -40,8 +40,9 @@ export class Room {
 
   startNewGame() {
     const shuffledCards = shuffle(cards);
+    this.closedDeck = shuffledCards;
     this.players.forEach(
-      (player) => (player.cards = shuffledCards.splice(-5, 5)),
+      (player) => (player.cards = this.closedDeck.splice(-5, 5)),
     );
     this.openDeck = [];
     this.status = 'playing';
@@ -87,5 +88,16 @@ export class Room {
       ...userRoomState,
       players,
     };
+  }
+
+  drawCard(userId: string) {
+    const card = this.closedDeck.pop();
+    if (card) {
+      const player = this.findUserById(userId);
+      if (player) {
+        player.cards.push(card);
+      }
+    }
+    return null;
   }
 }
