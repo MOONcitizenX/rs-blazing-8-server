@@ -27,8 +27,15 @@ export interface StartGameClientEvent {
   event: 'start-game';
 }
 
-export interface DrawCardClietnEvent {
+export interface DrawCardClientEvent {
   event: 'draw-card';
+}
+
+export interface PutCardClientEvent {
+  event: 'play-card';
+  payload: {
+    card: string;
+  };
 }
 
 // From back to front

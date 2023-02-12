@@ -1,31 +1,37 @@
 import { randomUUID } from 'crypto';
 import { cards } from 'src/data/cards';
 import { pick, shuffle } from 'lodash';
+import { Card, cardsMap } from 'src/data/cardsMap';
 
 export type RoomStatus = 'lobby' | 'playing';
+
+export interface Player {
+  id: string;
+  name: string;
+  avatarId: string;
+  online: boolean;
+  cards: string[];
+}
 
 export class Room {
   private closedDeck: string[] = [];
   private openDeck: string[] = [];
+  private topCard: Card | null;
   private maxPlayers = 5;
 
   roomId: string;
   status: RoomStatus;
+  direction: 'CW' | 'ACW';
+  playerTurn: string;
   winner: string;
-  players: [
-    {
-      id: string;
-      name: string;
-      avatarId: string;
-      online: boolean;
-      cards: string[];
-    },
-  ];
+  players: Player[];
 
   constructor(userId: string, userName: string, avatarId: string) {
     const roomId = randomUUID();
     this.roomId = roomId;
     this.status = 'lobby';
+    this.direction = 'CW';
+    this.topCard = null;
     this.winner = '';
     this.players = [
       {
@@ -36,6 +42,7 @@ export class Room {
         cards: [],
       },
     ];
+    this.playerTurn = this.winner ?? this.players[0].id;
   }
 
   startNewGame() {
@@ -44,7 +51,11 @@ export class Room {
     this.players.forEach(
       (player) => (player.cards = this.closedDeck.splice(-5, 5)),
     );
-    this.openDeck = [];
+    const startCard = this.closedDeck.pop();
+    if (startCard) {
+      this.openDeck = [startCard];
+      this.topCard = cardsMap[startCard];
+    }
     this.status = 'playing';
   }
 
@@ -80,7 +91,8 @@ export class Room {
       'roomId',
       'status',
       'winner',
-      'closedDeck',
+      'direction',
+      'topCard',
     );
     const players = this.players.map((player) =>
       player.id === userId
@@ -108,5 +120,143 @@ export class Room {
       }
     }
     return null;
+  }
+
+  playCard(userId: string, cardName: string) {
+    const player = this.findUserById(userId);
+    const playerCard = cardsMap[cardName];
+    const topCard = this.topCard;
+    if (topCard && player && this.checkIsCardPlayable(playerCard, topCard)) {
+      this.playCardOnBehavior(playerCard, player);
+    }
+  }
+
+  checkIsCardPlayable(playerCard: Card, topCard: Card) {
+    return (
+      topCard &&
+      (playerCard.value === topCard.value ||
+        playerCard.color === topCard.color ||
+        playerCard.value === '8' ||
+        playerCard.value === 'swap')
+    );
+  }
+
+  // decideCardBehavior(playerCard: Card, currentCard: Card) {
+  //   if(playerCard.value === currentCard.value) {
+  //     this.playCardOnBehavior(playerCard)
+  //   }
+  // }
+
+  playCardOnBehavior(playerCard: Card, player: Player) {
+    switch (playerCard.value) {
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '9':
+      case '10':
+      case 'A': {
+        this.playRegularCard(playerCard, player);
+        break;
+      }
+      case 'J': {
+        this.playJack(playerCard, player);
+        break;
+      }
+      case 'Q': {
+        this.playQueen(playerCard, player);
+        break;
+      }
+      case 'K': {
+        this.playKing(playerCard, player);
+        break;
+      }
+      case 'swap': {
+        this.playSwap(playerCard, player);
+        break;
+      }
+      default:
+        this.movePlayerTurn();
+    }
+  }
+
+  playRegularCard(card: Card, player: Player) {
+    this.topCard = card;
+    this.removeCard(card, player);
+  }
+
+  // TODO
+  playEight(card: Card, player: Player) {
+    return;
+  }
+
+  playJack(card: Card, player: Player) {
+    this.playRegularCard(card, player);
+    this.movePlayerTurn();
+  }
+
+  playQueen(card: Card, player: Player) {
+    this.playRegularCard(card, player);
+    this.direction = this.direction === 'CW' ? 'ACW' : 'CW';
+  }
+
+  playKing(card: Card, player: Player) {
+    this.playRegularCard(card, player);
+    const otherPlayers = this.players.filter((user) => user.id !== player.id);
+    otherPlayers.forEach((user) => this.drawCard(user.id));
+  }
+
+  playSwap(card: Card, player: Player) {
+    this.removeCard(card, player);
+    const currentPlayerIndex = this.players.findIndex(
+      (player) => player.id === this.playerTurn,
+    );
+    let nextPlayer;
+    if (this.direction === 'CW') {
+      nextPlayer =
+        currentPlayerIndex < this.players.length
+          ? this.players[currentPlayerIndex + 1]
+          : this.players[0];
+    }
+    if (this.direction === 'ACW') {
+      nextPlayer =
+        currentPlayerIndex === 0
+          ? this.players[this.players.length - 1]
+          : this.players[currentPlayerIndex - 1];
+    }
+    const tempCards = player.cards;
+    player.cards = nextPlayer.cards;
+    nextPlayer.cards = tempCards;
+  }
+
+  removeCard(playerCard: Card, player: Player) {
+    const cardIndex = player.cards.findIndex(
+      (card) =>
+        cardsMap[card].value === playerCard.value &&
+        cardsMap[card].color === playerCard.color,
+    );
+    player.cards.splice(cardIndex, 1);
+  }
+
+  movePlayerTurn() {
+    const currentPlayerIndex = this.players.findIndex(
+      (player) => player.id === this.playerTurn,
+    );
+    if (currentPlayerIndex) {
+      if (this.direction === 'CW') {
+        this.playerTurn =
+          currentPlayerIndex < this.players.length
+            ? this.players[currentPlayerIndex + 1].id
+            : this.players[0].id;
+      }
+      if (this.direction === 'ACW') {
+        this.playerTurn =
+          currentPlayerIndex === 0
+            ? this.players[this.players.length - 1].id
+            : this.players[currentPlayerIndex - 1].id;
+      }
+    }
   }
 }
