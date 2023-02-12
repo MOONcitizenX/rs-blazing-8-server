@@ -12,6 +12,7 @@ import { GameService } from 'src/gameService/gameService';
 import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
+  PutCardClientEvent,
 } from 'src/webSocketsTypes';
 
 @WebSocketGateway(5555, {
@@ -97,6 +98,19 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.drawCard(client.data.userId);
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      this.gameService.sendPersonalStates(sockets, room);
+    }
+  }
+
+  @SubscribeMessage('play-card')
+  async onPlayCard(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() message: PutCardClientEvent['payload'],
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
     }
