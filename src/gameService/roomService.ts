@@ -28,6 +28,7 @@ export class Room {
 
   constructor(userId: string, userName: string, avatarId: string) {
     const roomId = randomUUID();
+    this.openDeck = [];
     this.roomId = roomId;
     this.status = 'lobby';
     this.direction = 'CW';
@@ -205,6 +206,10 @@ export class Room {
   playKing(card: Card, player: Player) {
     this.playRegularCard(card, player);
     const otherPlayers = this.players.filter((user) => user.id !== player.id);
+    if (this.closedDeck.length <= this.players.length) {
+      const cardsFromBottom = this.openDeck.splice(0, this.players.length);
+      this.closedDeck.push(...cardsFromBottom);
+    }
     otherPlayers.forEach((user) => this.drawCard(user.id));
   }
 
