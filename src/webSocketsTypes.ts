@@ -31,7 +31,7 @@ export interface DrawCardClientEvent {
   event: 'draw-card';
 }
 
-export interface PutCardClientEvent {
+export interface PlayCardClientEvent {
   event: 'play-card';
   payload: {
     card: string;

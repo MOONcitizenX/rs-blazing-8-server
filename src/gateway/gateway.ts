@@ -12,7 +12,7 @@ import { GameService } from 'src/gameService/gameService';
 import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
-  PutCardClientEvent,
+  PlayCardClientEvent,
 } from 'src/webSocketsTypes';
 
 @WebSocketGateway(5555, {
@@ -106,7 +106,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('play-card')
   async onPlayCard(
     @ConnectedSocket() client: Socket,
-    @MessageBody() message: PutCardClientEvent['payload'],
+    @MessageBody() message: PlayCardClientEvent['payload'],
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
