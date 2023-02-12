@@ -142,12 +142,6 @@ export class Room {
     );
   }
 
-  // decideCardBehavior(playerCard: Card, currentCard: Card) {
-  //   if(playerCard.value === currentCard.value) {
-  //     this.playCardOnBehavior(playerCard)
-  //   }
-  // }
-
   playCardOnBehavior(playerCard: Card, player: Player) {
     switch (playerCard.value) {
       case '2':
