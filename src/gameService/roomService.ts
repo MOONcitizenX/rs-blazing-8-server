@@ -190,7 +190,12 @@ export class Room {
 
   // TODO
   playEight(card: Card, player: Player) {
-    return;
+    this.removeCard(card, player);
+    if (this.topCard) {
+      this.topCard.color = card.color;
+    } else {
+      this.topCard = card;
+    }
   }
 
   playJack(card: Card, player: Player) {

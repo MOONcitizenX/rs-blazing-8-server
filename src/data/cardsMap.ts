@@ -200,8 +200,20 @@ export const cardsMap: Record<string, Card> = {
     value: 'swap',
     color: 'multi',
   },
-  '8': {
+  '8R': {
     value: '8',
-    color: 'multi',
+    color: 'R',
+  },
+  '8G': {
+    value: '8',
+    color: 'G',
+  },
+  '8B': {
+    value: '8',
+    color: 'B',
+  },
+  '8Y': {
+    value: '8',
+    color: 'Y',
   },
 };
