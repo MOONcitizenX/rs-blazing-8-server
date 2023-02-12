@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { RemoteSocket } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
@@ -58,11 +60,13 @@ export class GameService {
 
   reconnect(userId: string) {
     const roomState = this.findRoom('user', userId);
-    const player = roomState?.findUserById(userId);
-    const personalRoomState = roomState?.getUserState(userId);
-    if (personalRoomState && player) {
-      player.online = true;
-      return personalRoomState;
+    if (roomState) {
+      const player = roomState.findUserById(userId);
+      const personalRoomState = roomState.getUserState(userId);
+      if (personalRoomState && player) {
+        player.online = true;
+        return personalRoomState;
+      }
     }
     return null;
   }
@@ -78,5 +82,14 @@ export class GameService {
       const room = this.rooms.find((room) => room.roomId === id);
       return room;
     }
+  }
+
+  sendPersonalStates(
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    room: Room,
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('room-state', room.getUserState(socket.data.userId));
+    });
   }
 }

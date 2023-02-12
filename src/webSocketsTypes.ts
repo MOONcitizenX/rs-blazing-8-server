@@ -27,6 +27,10 @@ export interface StartGameClientEvent {
   event: 'start-game';
 }
 
+export interface DrawCardClietnEvent {
+  event: 'draw-card';
+}
+
 // From back to front
 export interface RoomStateServerEvent {
   event: 'room-state';

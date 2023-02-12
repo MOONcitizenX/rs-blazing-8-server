@@ -75,7 +75,13 @@ export class Room {
   }
 
   getUserState(this: Room, userId: string) {
-    const userRoomState = pick(this, 'roomId', 'status', 'winner');
+    const userRoomState = pick(
+      this,
+      'roomId',
+      'status',
+      'winner',
+      'closedDeck',
+    );
     const players = this.players.map((player) =>
       player.id === userId
         ? player
@@ -84,9 +90,12 @@ export class Room {
             cards: player.cards.length,
           },
     );
+    const closedDeck = this.closedDeck.length;
     return {
       ...userRoomState,
       players,
+      closedDeck,
+      roomId: this.roomId,
     };
   }
 
