@@ -94,6 +94,7 @@ export class Room {
       'winner',
       'direction',
       'topCard',
+      'playerTurn',
     );
     const players = this.players.map((player) =>
       player.id === userId
