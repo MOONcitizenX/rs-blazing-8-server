@@ -2,10 +2,12 @@ export interface ChatMessage {
   author: string;
   timeStamp: string;
   message: string;
+  messageId: string;
 }
 
 export class Chat {
   private messages: ChatMessage[] = [];
+  messageId = 0;
 
   roomId: string;
 
@@ -24,6 +26,7 @@ export class Chat {
       author,
       timeStamp,
       message,
+      messageId: (this.messageId++).toString(),
     });
   }
 
