@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from 'src/gameService/gameService';
 import {
+  AddChatMessageClientEvent,
   CreateRoomClientEvent,
   JoinRoomClientEvent,
   PlayCardClientEvent,
@@ -34,10 +35,12 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
-    const roomState = this.gameService.reconnect(client.data.userId);
-    if (roomState) {
-      client.join(roomState.roomId);
-      client.emit('room-state', roomState);
+    const clientRoom = this.gameService.reconnect(client.data.userId);
+    if (clientRoom) {
+      const { room, chat } = clientRoom;
+      client.join(room.roomId);
+      client.emit('room-state', room);
+      client.emit('get-chat', chat.chat);
     }
   }
 
@@ -46,9 +49,13 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() message: CreateRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
-    const room = this.gameService.createRoom(client.data.userId, message);
+    const { room, chat } = this.gameService.createRoom(
+      client.data.userId,
+      message,
+    );
     client.join(room.roomId);
     client.emit('room-state', room);
+    client.emit('get-chat', chat.chat);
   }
 
   @SubscribeMessage('join-room')
@@ -56,13 +63,17 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() message: JoinRoomClientEvent['payload'],
     @ConnectedSocket() client: Socket,
   ) {
-    const roomState = this.gameService.joinRoom(client.data.userId, message);
-    if (roomState) {
+    const clientRoom = this.gameService.joinRoom(client.data.userId, message);
+    if (clientRoom) {
+      const { room, chat } = clientRoom;
       client.join(message.roomId);
+      this.server.to(message.roomId).emit('room-state', room);
+      this.server.to(message.roomId).emit('get-chat', chat.chat);
     } else {
-      client.emit('error', { message: 'No such room exists or room is full' });
+      client.emit('error', {
+        message: 'No such room exists or room is full',
+      });
     }
-    this.server.to(message.roomId).emit('room-state', roomState);
   }
 
   @SubscribeMessage('leave-room')
@@ -77,6 +88,12 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         leftPlayer.online = false;
       }
       this.gameService.sendPersonalStates(sockets, room);
+      // TODO here or in gameService ?
+      const chat = this.gameService.findChat(room.roomId);
+      if (chat) {
+        chat.addMessage(client.data.userId, 'has left the game');
+        this.gameService.sendUpdatedChat(sockets, chat.chat);
+      }
       client.emit('leave-success');
     } else {
       client.emit('error', { message: 'No such room or player exists' });
@@ -107,7 +124,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   async onPassTurn(@ConnectedSocket() client: Socket) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      room.movePlayerTurn;
+      room.movePlayerTurn();
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
     }
@@ -123,6 +140,22 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
+    }
+  }
+
+  @SubscribeMessage('add-chat-message')
+  async onNewChatMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() message: AddChatMessageClientEvent['payload'],
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      const chat = this.gameService.findChat(room.roomId);
+      if (chat) {
+        chat.addMessage(client.data.userId, message.message);
+        const sockets = await this.server.in(room.roomId).fetchSockets();
+        this.gameService.sendUpdatedChat(sockets, chat.chat);
+      }
     }
   }
 }

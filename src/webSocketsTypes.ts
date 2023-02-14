@@ -1,5 +1,6 @@
 // From front to back
 
+import { ChatMessage } from './chatService/chatService';
 import { Room } from './gameService/roomService';
 
 export interface CreateRoomClientEvent {
@@ -42,6 +43,13 @@ export interface PassTurnClientEvent {
   event: 'pass-turn';
 }
 
+export interface AddChatMessageClientEvent {
+  event: 'add-chat-message';
+  payload: {
+    message: string;
+  };
+}
+
 // From back to front
 export interface RoomStateServerEvent {
   event: 'room-state';
@@ -57,4 +65,9 @@ export interface GetMeServerEvent {
 
 export interface LeaveSuccessServerEvent {
   event: 'leave-success';
+}
+
+export interface GetChatServerEvent {
+  event: 'get-chat';
+  payload: ChatMessage[];
 }

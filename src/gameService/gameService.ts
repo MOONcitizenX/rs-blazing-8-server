@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RemoteSocket } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { Chat, ChatMessage } from 'src/chatService/chatService';
 import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
@@ -10,6 +11,7 @@ import { Room } from './roomService';
 @Injectable()
 export class GameService {
   rooms: Room[] = [];
+  chats: Chat[] = [];
 
   createRoom(
     userId: string,
@@ -17,7 +19,9 @@ export class GameService {
   ) {
     const room = new Room(userId, userName, avatarId);
     this.rooms.push(room);
-    return room;
+    const chat = new Chat(userId, room.roomId);
+    this.chats.push(chat);
+    return { room, chat };
   }
 
   joinRoom(
@@ -25,9 +29,11 @@ export class GameService {
     { roomId, userName, avatarId }: JoinRoomClientEvent['payload'],
   ) {
     const room = this.findRoom('room', roomId);
-    if (room && room.players.length < 5) {
+    const chat = this.findChat(roomId);
+    if (room && chat && room.players.length < 5) {
       const newRoom = room.addNewPlayer({ userId, userName, avatarId });
-      return newRoom;
+      chat.addMessage(userId);
+      return { room: newRoom, chat };
     }
     return null;
   }
@@ -59,13 +65,14 @@ export class GameService {
   }
 
   reconnect(userId: string) {
-    const roomState = this.findRoom('user', userId);
-    if (roomState) {
-      const player = roomState.findUserById(userId);
-      const personalRoomState = roomState.getUserState(userId);
-      if (personalRoomState && player) {
+    const room = this.findRoom('user', userId);
+    if (room) {
+      const chat = this.findChat(room.roomId);
+      const player = room.findUserById(userId);
+      const personalRoomState = room.getUserState(userId);
+      if (personalRoomState && player && chat) {
         player.online = true;
-        return personalRoomState;
+        return { room: personalRoomState, chat };
       }
     }
     return null;
@@ -84,12 +91,25 @@ export class GameService {
     }
   }
 
+  findChat(roomId: string) {
+    return this.chats.find((chat) => chat.roomId === roomId);
+  }
+
   sendPersonalStates(
     sockets: RemoteSocket<DefaultEventsMap, any>[],
     room: Room,
   ) {
     sockets.forEach((socket) => {
       socket.emit('room-state', room.getUserState(socket.data.userId));
+    });
+  }
+
+  sendUpdatedChat(
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    chat: ChatMessage[],
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('get-chat', chat);
     });
   }
 }
