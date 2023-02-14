@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { cards } from 'src/data/cards';
 import { pick, shuffle } from 'lodash';
 import { Card, cardsMap } from 'src/data/cardsMap';
 
@@ -14,9 +13,9 @@ export interface Player {
 }
 
 export class Room {
-  private closedDeck: string[] = [];
-  private openDeck: string[] = [];
-  private topCard: Card | null;
+  private closedDeck: Card['cardId'][] = [];
+  private openDeck: Card['cardId'][] = [];
+  private topCard: Card['cardId'] | null;
   private maxPlayers = 5;
 
   roomId: string;
@@ -43,10 +42,11 @@ export class Room {
         cards: [],
       },
     ];
-    this.playerTurn = this.winner ?? this.players[0].id;
+    this.playerTurn = this.winner || this.players[0].id;
   }
 
   startNewGame() {
+    const cards = Object.keys(cardsMap);
     const shuffledCards = shuffle(cards);
     this.closedDeck = shuffledCards;
     this.players.forEach(
@@ -55,7 +55,7 @@ export class Room {
     const startCard = this.closedDeck.pop();
     if (startCard) {
       this.openDeck = [startCard];
-      this.topCard = cardsMap[startCard];
+      this.topCard = startCard;
     }
     this.status = 'playing';
   }
@@ -127,9 +127,10 @@ export class Room {
   playCard(userId: string, cardName: string) {
     const player = this.findUserById(userId);
     const playerCard = cardsMap[cardName];
-    const topCard = this.topCard;
+    const topCard = this.topCard ? cardsMap[this.topCard] : null;
     if (topCard && player && this.checkIsCardPlayable(playerCard, topCard)) {
       this.playCardOnBehavior(playerCard, player);
+      this.movePlayerTurn();
     }
   }
 
@@ -173,24 +174,27 @@ export class Room {
         this.playSwap(playerCard, player);
         break;
       }
-      default:
-        this.movePlayerTurn();
+      case '8': {
+        this.playEight(playerCard, player);
+        break;
+      }
     }
   }
 
   playRegularCard(card: Card, player: Player) {
-    this.topCard = card;
+    this.topCard = card.cardId;
     this.removeCard(card, player);
   }
 
-  // TODO
   playEight(card: Card, player: Player) {
-    this.removeCard(card, player);
     if (this.topCard) {
-      this.topCard.color = card.color;
+      const topCard = cardsMap[this.topCard];
+      topCard.color = card.color;
+      this.topCard = topCard.cardId;
     } else {
-      this.topCard = card;
+      this.topCard = card.cardId;
     }
+    this.removeCard(card, player);
   }
 
   playJack(card: Card, player: Player) {
@@ -214,7 +218,6 @@ export class Room {
   }
 
   playSwap(card: Card, player: Player) {
-    this.removeCard(card, player);
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
@@ -234,6 +237,7 @@ export class Room {
     const tempCards = player.cards;
     player.cards = nextPlayer.cards;
     nextPlayer.cards = tempCards;
+    this.removeCard(card, player);
   }
 
   removeCard(playerCard: Card, player: Player) {
@@ -249,10 +253,11 @@ export class Room {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
-    if (currentPlayerIndex) {
+    console.log(currentPlayerIndex);
+    if (currentPlayerIndex !== undefined || currentPlayerIndex !== null) {
       if (this.direction === 'CW') {
         this.playerTurn =
-          currentPlayerIndex < this.players.length
+          currentPlayerIndex < this.players.length - 1
             ? this.players[currentPlayerIndex + 1].id
             : this.players[0].id;
       }

@@ -103,6 +103,16 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('pass-turn')
+  async onPassTurn(@ConnectedSocket() client: Socket) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      room.movePlayerTurn;
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      this.gameService.sendPersonalStates(sockets, room);
+    }
+  }
+
   @SubscribeMessage('play-card')
   async onPlayCard(
     @ConnectedSocket() client: Socket,

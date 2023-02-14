@@ -38,6 +38,10 @@ export interface PlayCardClientEvent {
   };
 }
 
+export interface PassTurnClientEvent {
+  event: 'pass-turn';
+}
+
 // From back to front
 export interface RoomStateServerEvent {
   event: 'room-state';
