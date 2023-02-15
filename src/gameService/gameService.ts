@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RemoteSocket } from 'socket.io';
+import { RemoteSocket, Socket } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { Chat, ChatMessage } from 'src/chatService/chatService';
 import {
@@ -102,6 +102,24 @@ export class GameService {
     sockets.forEach((socket) => {
       socket.emit('room-state', room.getUserState(socket.data.userId));
     });
+  }
+
+  sendIsChooseColor(
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    value: boolean,
+    client?: Socket,
+  ) {
+    if (client) {
+      sockets.forEach((socket) => {
+        if (socket.data.userId !== client.data.userId) {
+          socket.emit('choose-color', value);
+        }
+      });
+    } else {
+      sockets.forEach((socket) => {
+        socket.emit('choose-color', value);
+      });
+    }
   }
 
   sendUpdatedChat(

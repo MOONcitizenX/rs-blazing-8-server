@@ -8,6 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { cardsMap } from 'src/data/cardsMap';
 import { GameService } from 'src/gameService/gameService';
 import {
   AddChatMessageClientEvent,
@@ -88,7 +89,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         leftPlayer.online = false;
       }
       this.gameService.sendPersonalStates(sockets, room);
-      // TODO here or in gameService ?
       const chat = this.gameService.findChat(room.roomId);
       if (chat) {
         chat.addMessage(client.data.userId, 'has left the game');
@@ -140,6 +140,18 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
+      if (cardsMap[message.card].value === '8') {
+        this.gameService.sendIsChooseColor(sockets, false, client);
+      }
+    }
+  }
+
+  @SubscribeMessage('choose-color')
+  async onChooseColor(@ConnectedSocket() client: Socket) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      this.gameService.sendIsChooseColor(sockets, true);
     }
   }
 
