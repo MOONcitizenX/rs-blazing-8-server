@@ -141,7 +141,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
       if (cardsMap[message.card].value === '8') {
-        this.gameService.sendIsChooseColor(client, sockets, false);
+        this.gameService.sendIsChooseColor(sockets, false, client);
       }
     }
   }
@@ -151,7 +151,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      this.gameService.sendIsChooseColor(client, sockets, true);
+      this.gameService.sendIsChooseColor(sockets, true);
     }
   }
 

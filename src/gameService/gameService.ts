@@ -105,15 +105,21 @@ export class GameService {
   }
 
   sendIsChooseColor(
-    client: Socket,
     sockets: RemoteSocket<DefaultEventsMap, any>[],
     value: boolean,
+    client?: Socket,
   ) {
-    sockets.forEach((socket) => {
-      if (socket.data.userId !== client.data.userId) {
+    if (client) {
+      sockets.forEach((socket) => {
+        if (socket.data.userId !== client.data.userId) {
+          socket.emit('choose-color', value);
+        }
+      });
+    } else {
+      sockets.forEach((socket) => {
         socket.emit('choose-color', value);
-      }
-    });
+      });
+    }
   }
 
   sendUpdatedChat(
