@@ -214,7 +214,7 @@ export class Room {
     let nextPlayer;
     if (this.direction === 'CW') {
       nextPlayer =
-        currentPlayerIndex < this.players.length
+        currentPlayerIndex < this.players.length - 1
           ? this.players[currentPlayerIndex + 1]
           : this.players[0];
     }
