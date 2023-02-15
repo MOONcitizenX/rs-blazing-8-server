@@ -175,7 +175,7 @@ export class Room {
         break;
       }
       case '8': {
-        this.playEight(playerCard, player);
+        this.playRegularCard(playerCard, player);
         break;
       }
     }
@@ -183,17 +183,6 @@ export class Room {
 
   playRegularCard(card: Card, player: Player) {
     this.topCard = card.cardId;
-    this.removeCard(card, player);
-  }
-
-  playEight(card: Card, player: Player) {
-    if (this.topCard) {
-      const topCard = cardsMap[this.topCard];
-      topCard.color = card.color;
-      this.topCard = topCard.cardId;
-    } else {
-      this.topCard = card.cardId;
-    }
     this.removeCard(card, player);
   }
 
