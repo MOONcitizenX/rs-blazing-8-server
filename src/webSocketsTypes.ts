@@ -62,6 +62,7 @@ export interface RoomStateServerEvent {
 
 export interface ChooseColorServerEvent {
   event: 'choose-color';
+  payload: boolean;
 }
 
 export interface GetMeServerEvent {
