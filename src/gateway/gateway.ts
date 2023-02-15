@@ -88,7 +88,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         leftPlayer.online = false;
       }
       this.gameService.sendPersonalStates(sockets, room);
-      // TODO here or in gameService ?
       const chat = this.gameService.findChat(room.roomId);
       if (chat) {
         chat.addMessage(client.data.userId, 'has left the game');
@@ -140,6 +139,19 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
+    }
+  }
+
+  @SubscribeMessage('choose-color')
+  async onChooseColor(@ConnectedSocket() client: Socket) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      sockets.forEach((sock) => {
+        if (sock.data.userId !== client.data.userId) {
+          sock.emit('choose-color');
+        }
+      });
     }
   }
 

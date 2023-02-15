@@ -39,6 +39,10 @@ export interface PlayCardClientEvent {
   };
 }
 
+export interface ChooseColorClientEvent {
+  event: 'choose-color';
+}
+
 export interface PassTurnClientEvent {
   event: 'pass-turn';
 }
@@ -54,6 +58,10 @@ export interface AddChatMessageClientEvent {
 export interface RoomStateServerEvent {
   event: 'room-state';
   payload: Room | null;
+}
+
+export interface ChooseColorServerEvent {
+  event: 'choose-color';
 }
 
 export interface GetMeServerEvent {
