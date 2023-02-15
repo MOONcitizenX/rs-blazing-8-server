@@ -234,10 +234,10 @@ export class Room {
           ? this.players[this.players.length - 1]
           : this.players[currentPlayerIndex - 1];
     }
+    this.removeCard(card, player);
     const tempCards = player.cards;
     player.cards = nextPlayer.cards;
     nextPlayer.cards = tempCards;
-    this.removeCard(card, player);
   }
 
   removeCard(playerCard: Card, player: Player) {
