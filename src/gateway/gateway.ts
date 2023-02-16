@@ -144,6 +144,12 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (room) {
       room.drawCard(client.data.userId);
       const sockets = await this.server.in(room.roomId).fetchSockets();
+      const oneCardLeft = room.checkIsOneCardLeft();
+      if (oneCardLeft) {
+        this.gameService.sendOneCardLeft(sockets, true);
+      } else {
+        this.gameService.sendOneCardLeft(sockets, false);
+      }
       this.gameService.sendPersonalStates(sockets, room);
     }
   }
@@ -178,7 +184,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
       }
-
       if (oneCardLeft) {
         this.gameService.sendOneCardLeft(sockets, true);
       } else {
