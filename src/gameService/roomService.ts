@@ -145,6 +145,7 @@ export class Room {
       if (player) {
         player.cards.push(card);
       }
+      return card;
     }
     return null;
   }
