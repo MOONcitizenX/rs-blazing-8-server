@@ -1,5 +1,5 @@
 import { ChatMessage } from 'src/chatService/chatService';
-import { RoomStateType } from 'src/gameService/roomService';
+import { Player, RoomStateType } from 'src/gameService/roomService';
 
 export interface ServerToClientEvents {
   'room-state': (room: RoomStateType | null) => void;
@@ -11,6 +11,8 @@ export interface ServerToClientEvents {
   'leave-success': () => void;
 
   'get-chat': (chat: ChatMessage[]) => void;
+
+  'winner-winner': (winner: Player['id']) => void;
 
   error: ({ message }: { message: string }, func?: () => void) => void;
 }

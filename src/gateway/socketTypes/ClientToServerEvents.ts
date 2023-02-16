@@ -14,6 +14,8 @@ export interface ClientToServerEvents {
 
   'start-game': () => void;
 
+  'convert-to-lobby': () => void;
+
   'draw-card': () => void;
 
   'play-card': () => { card: string };

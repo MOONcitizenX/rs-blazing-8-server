@@ -7,7 +7,7 @@ import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
 } from 'src/webSocketsTypes';
-import { Room } from './roomService';
+import { Player, Room } from './roomService';
 
 @Injectable()
 export class GameService {
@@ -31,10 +31,12 @@ export class GameService {
   ) {
     const room = this.findRoom('room', roomId);
     const chat = this.findChat(roomId);
-    if (room && chat && room.players.length < 5) {
-      const newRoom = room.addNewPlayer({ userId, userName, avatarId });
+    if (room && chat) {
+      const isPlayerAdded = room.addNewPlayer({ userId, userName, avatarId });
       chat.addMessage(userId);
-      return { room: newRoom, chat };
+      if (isPlayerAdded) {
+        return { room, chat };
+      }
     }
     return null;
   }
@@ -124,11 +126,20 @@ export class GameService {
   }
 
   sendUpdatedChat(
-    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
     chat: ChatMessage[],
   ) {
     sockets.forEach((socket) => {
       socket.emit('get-chat', chat);
+    });
+  }
+
+  sendWinner(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    winnerId: Player['id'],
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('winner-winner', winnerId);
     });
   }
 }

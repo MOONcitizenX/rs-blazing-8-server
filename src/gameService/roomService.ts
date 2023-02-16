@@ -7,7 +7,6 @@ export type RoomStatus = 'lobby' | 'playing';
 export type RoomStateType = {
   roomId: string;
   status: string;
-  winner: string;
   direction: string;
   topCard: string | null;
   playerTurn: string;
@@ -33,7 +32,7 @@ export class Room {
   status: RoomStatus;
   direction: 'CW' | 'ACW';
   playerTurn: string;
-  winner: string;
+  private winner: string;
   players: Player[];
 
   constructor(userId: string, userName: string, avatarId: string) {
@@ -68,7 +67,12 @@ export class Room {
       this.openDeck = [startCard];
       this.topCard = startCard;
     }
+    const isWinnerInGame = this.players.find(
+      (player) => player.id === this.winner,
+    );
+    this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
     this.status = 'playing';
+    this.direction = 'CW';
   }
 
   finishGame(winnerId: string) {
@@ -80,7 +84,11 @@ export class Room {
   }
 
   addNewPlayer({ userId, userName, avatarId }: Record<string, string>) {
-    if (!this.findUserById(userId) && this.players.length <= this.maxPlayers) {
+    if (
+      !this.findUserById(userId) &&
+      this.players.length < this.maxPlayers &&
+      this.status !== 'playing'
+    ) {
       this.players.push({
         id: userId,
         name: userName,
@@ -88,9 +96,13 @@ export class Room {
         online: true,
         cards: [],
       });
-      return this;
+      return true;
     }
     return null;
+  }
+
+  convertToLobby() {
+    this.status = 'lobby';
   }
 
   findUserById(userId: string) {
@@ -102,7 +114,6 @@ export class Room {
       this,
       'roomId',
       'status',
-      'winner',
       'direction',
       'topCard',
       'playerTurn',
@@ -143,6 +154,11 @@ export class Room {
       this.playCardOnBehavior(playerCard, player);
       this.movePlayerTurn();
     }
+    const winner = this.checkIsWinner();
+    if (winner) {
+      this.winner = winner.id;
+    }
+    return winner;
   }
 
   checkIsCardPlayable(playerCard: Card, topCard: Card) {
@@ -268,5 +284,10 @@ export class Room {
             : this.players[currentPlayerIndex - 1].id;
       }
     }
+  }
+
+  checkIsWinner() {
+    const winner = this.players.find((player) => player.cards.length === 0);
+    return winner;
   }
 }
