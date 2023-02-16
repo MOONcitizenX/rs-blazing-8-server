@@ -81,6 +81,17 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('convert-to-lobby')
+  async onConvertToLobby(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      room.convertToLobby();
+    }
+  }
+
   @SubscribeMessage('leave-room')
   async onLeaveRoom(
     @ConnectedSocket()
@@ -154,11 +165,14 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      room.playCard(client.data.userId, message.card);
+      const winner = room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
       if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
+      }
+      if (winner) {
+        this.gameService.sendWinner(sockets, winner.id);
       }
     }
   }
