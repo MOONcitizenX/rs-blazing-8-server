@@ -14,5 +14,7 @@ export interface ServerToClientEvents {
 
   'winner-winner': ({ winner }: { winner: Player['id'] }) => void;
 
+  'one-card-left': (isOneCardLeft: boolean) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }
