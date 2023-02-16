@@ -19,7 +19,9 @@ import {
 import { ClientToServerEvents } from './socketTypes/ClientToServerEvents';
 import { ServerToClientEvents } from './socketTypes/ServerToClientEvents';
 
-@WebSocketGateway(5555, {
+const PORT = Number(process.env.PORT) || 5555;
+
+@WebSocketGateway(PORT, {
   cors: {
     origin: '*',
   },
