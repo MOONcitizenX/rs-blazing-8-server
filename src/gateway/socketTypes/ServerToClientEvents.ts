@@ -12,7 +12,7 @@ export interface ServerToClientEvents {
 
   'get-chat': (chat: ChatMessage[]) => void;
 
-  'winner-winner': (winner: Player['id']) => void;
+  'winner-winner': ({ winner }: { winner: Player['id'] }) => void;
 
   error: ({ message }: { message: string }, func?: () => void) => void;
 }

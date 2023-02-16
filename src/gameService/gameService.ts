@@ -139,7 +139,7 @@ export class GameService {
     winnerId: Player['id'],
   ) {
     sockets.forEach((socket) => {
-      socket.emit('winner-winner', winnerId);
+      socket.emit('winner-winner', { winner: winnerId });
     });
   }
 }
