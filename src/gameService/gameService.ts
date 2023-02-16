@@ -136,7 +136,7 @@ export class GameService {
 
   sendWinner(
     sockets: RemoteSocket<ServerToClientEvents, any>[],
-    winnerId: Player['id'],
+    winnerId: Player['id'] | null,
   ) {
     sockets.forEach((socket) => {
       socket.emit('winner-winner', { winner: winnerId });
