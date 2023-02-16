@@ -214,7 +214,8 @@ export class Room {
 
   playRegularCard(card: Card, player: Player) {
     this.topCard = card.cardId;
-    this.removeCard(card, player);
+    this.openDeck.push(this.topCard);
+    this.removeCardFromHand(card, player);
   }
 
   playJack(card: Card, player: Player) {
@@ -254,13 +255,14 @@ export class Room {
           ? this.players[this.players.length - 1]
           : this.players[currentPlayerIndex - 1];
     }
-    this.removeCard(card, player);
+    this.openDeck.push(card.cardId);
+    this.removeCardFromHand(card, player);
     const tempCards = player.cards;
     player.cards = nextPlayer.cards;
     nextPlayer.cards = tempCards;
   }
 
-  removeCard(playerCard: Card, player: Player) {
+  removeCardFromHand(playerCard: Card, player: Player) {
     const cardIndex = player.cards.findIndex(
       (card) =>
         cardsMap[card].value === playerCard.value &&

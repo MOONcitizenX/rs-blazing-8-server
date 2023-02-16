@@ -32,9 +32,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     console.log(client.data.userId, ' disconnected');
     const roomState = this.gameService.reconnect(client.data.userId);
-    if (roomState) {
-      this.onLeaveRoom(client);
-    }
   }
   handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
@@ -48,7 +45,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('create-room')
-  onCreateRoom(
+  async onCreateRoom(
     @MessageBody() message: CreateRoomClientEvent['payload'],
     @ConnectedSocket()
     client: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -58,12 +55,15 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       message,
     );
     client.join(room.roomId);
-    client.emit('room-state', room);
-    client.emit('get-chat', chat.chat);
+    const sockets = await this.server.in(room.roomId).fetchSockets();
+    this.gameService.sendPersonalStates(sockets, room);
+    if (chat) {
+      this.gameService.sendUpdatedChat(sockets, chat.chat);
+    }
   }
 
   @SubscribeMessage('join-room')
-  onJoinRoom(
+  async onJoinRoom(
     @MessageBody() message: JoinRoomClientEvent['payload'],
     @ConnectedSocket()
     client: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -72,8 +72,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (clientRoom) {
       const { room, chat } = clientRoom;
       client.join(message.roomId);
-      this.server.to(message.roomId).emit('room-state', room);
-      this.server.to(message.roomId).emit('get-chat', chat.chat);
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      this.gameService.sendPersonalStates(sockets, room);
+      if (chat) {
+        this.gameService.sendUpdatedChat(sockets, chat.chat);
+      }
     } else {
       client.emit('error', {
         message: 'No such room exists or room is full',
@@ -127,8 +130,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.startNewGame();
+      console.log(room.roomId);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
+    } else {
+      console.log('NO ROOM');
     }
   }
 
