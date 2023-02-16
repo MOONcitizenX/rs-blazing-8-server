@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RemoteSocket, Socket } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { Chat, ChatMessage } from 'src/chatService/chatService';
+import { ServerToClientEvents } from 'src/gateway/socketTypes/ServerToClientEvents';
 import {
   CreateRoomClientEvent,
   JoinRoomClientEvent,
@@ -105,7 +106,7 @@ export class GameService {
   }
 
   sendIsChooseColor(
-    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
     value: boolean,
     client?: Socket,
   ) {
