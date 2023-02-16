@@ -142,4 +142,13 @@ export class GameService {
       socket.emit('winner-winner', { winner: winnerId });
     });
   }
+
+  sendOneCardLeft(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    isOneCardLeft: boolean,
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('one-card-left', isOneCardLeft);
+    });
+  }
 }

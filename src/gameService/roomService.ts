@@ -33,6 +33,7 @@ export class Room {
   direction: 'CW' | 'ACW';
   playerTurn: string;
   private winner: string;
+  private oneCardLeft: boolean;
   players: Player[];
 
   constructor(userId: string, userName: string, avatarId: string) {
@@ -43,6 +44,7 @@ export class Room {
     this.direction = 'CW';
     this.topCard = null;
     this.winner = '';
+    this.oneCardLeft = false;
     this.players = [
       {
         id: userId,
@@ -70,6 +72,7 @@ export class Room {
     const isWinnerInGame = this.players.find(
       (player) => player.id === this.winner,
     );
+    this.oneCardLeft = false;
     this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
     this.status = 'playing';
     this.direction = 'CW';
@@ -158,7 +161,11 @@ export class Room {
     if (winner) {
       this.winner = winner.id;
     }
-    return winner;
+    const oneCardLeft = this.checkIsOneCardLeft();
+    if (oneCardLeft) {
+      this.oneCardLeft = true;
+    }
+    return { winner, oneCardLeft };
   }
 
   checkIsCardPlayable(playerCard: Card, topCard: Card) {
@@ -291,5 +298,12 @@ export class Room {
   checkIsWinner() {
     const winner = this.players.find((player) => player.cards.length === 0);
     return winner;
+  }
+
+  checkIsOneCardLeft() {
+    const oneCardLeft = this.players.find(
+      (player) => player.cards.length === 1,
+    );
+    return oneCardLeft;
   }
 }
