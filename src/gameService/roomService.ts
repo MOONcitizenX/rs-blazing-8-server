@@ -58,11 +58,14 @@ export class Room {
   startNewGame() {
     const cards = Object.keys(cardsMap);
     const shuffledCards = shuffle(cards);
-    shuffledCards.push('SR', 'SG', '8R', '8B');
     this.closedDeck = shuffledCards;
-    this.players.forEach(
-      (player) => (player.cards = this.closedDeck.splice(-5, 5)),
-    );
+    this.players.forEach((player, index) => {
+      if (index === 0) {
+        player.cards = ['8R'];
+      } else {
+        player.cards = this.closedDeck.splice(-5, 5);
+      }
+    });
     const startCard = this.closedDeck.pop();
     if (startCard) {
       this.openDeck = [startCard];
