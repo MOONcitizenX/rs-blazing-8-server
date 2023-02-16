@@ -4,6 +4,17 @@ import { Card, cardsMap } from 'src/data/cardsMap';
 
 export type RoomStatus = 'lobby' | 'playing';
 
+export type RoomStateType = {
+  roomId: string;
+  status: string;
+  winner: string;
+  direction: string;
+  topCard: string | null;
+  playerTurn: string;
+  players: Player[];
+  closedDeck: number | string[];
+};
+
 export interface Player {
   id: string;
   name: string;
@@ -13,9 +24,9 @@ export interface Player {
 }
 
 export class Room {
-  private closedDeck: Card['cardId'][] = [];
+  closedDeck: Card['cardId'][] = [];
   private openDeck: Card['cardId'][] = [];
-  private topCard: Card['cardId'] | null;
+  topCard: Card['cardId'] | null;
   private maxPlayers = 5;
 
   roomId: string;
