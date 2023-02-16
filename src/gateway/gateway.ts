@@ -16,6 +16,8 @@ import {
   JoinRoomClientEvent,
   PlayCardClientEvent,
 } from 'src/webSocketsTypes';
+import { ClientToServerEvents } from './socketTypes/ClientToServerEvents';
+import { ServerToClientEvents } from './socketTypes/ServerToClientEvents';
 
 @WebSocketGateway(5555, {
   cors: {
@@ -24,7 +26,7 @@ import {
 })
 export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server!: Server;
+  server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
   constructor(private gameService: GameService) {}
   handleDisconnect(client: Socket) {
@@ -48,7 +50,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('create-room')
   onCreateRoom(
     @MessageBody() message: CreateRoomClientEvent['payload'],
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
   ) {
     const { room, chat } = this.gameService.createRoom(
       client.data.userId,
@@ -62,7 +65,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('join-room')
   onJoinRoom(
     @MessageBody() message: JoinRoomClientEvent['payload'],
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
   ) {
     const clientRoom = this.gameService.joinRoom(client.data.userId, message);
     if (clientRoom) {
@@ -77,8 +81,22 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('convert-to-lobby')
+  async onConvertToLobby(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      room.convertToLobby();
+    }
+  }
+
   @SubscribeMessage('leave-room')
-  async onLeaveRoom(@ConnectedSocket() client: Socket) {
+  async onLeaveRoom(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
     const roomId = [...client.rooms][1];
     const room = this.gameService.leaveRoom(roomId, client.data.userId);
 
@@ -101,7 +119,10 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('start-game')
-  async onStartGame(@ConnectedSocket() client: Socket) {
+  async onStartGame(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.startNewGame();
@@ -111,7 +132,10 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('draw-card')
-  async onDrawCard(@ConnectedSocket() client: Socket) {
+  async onDrawCard(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.drawCard(client.data.userId);
@@ -121,7 +145,10 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('pass-turn')
-  async onPassTurn(@ConnectedSocket() client: Socket) {
+  async onPassTurn(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.movePlayerTurn();
@@ -132,22 +159,29 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('play-card')
   async onPlayCard(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
     @MessageBody() message: PlayCardClientEvent['payload'],
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      room.playCard(client.data.userId, message.card);
+      const winner = room.playCard(client.data.userId, message.card);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       this.gameService.sendPersonalStates(sockets, room);
       if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
       }
+      if (winner) {
+        this.gameService.sendWinner(sockets, winner.id);
+      }
     }
   }
 
   @SubscribeMessage('choose-color')
-  async onChooseColor(@ConnectedSocket() client: Socket) {
+  async onChooseColor(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
+  ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       const sockets = await this.server.in(room.roomId).fetchSockets();
@@ -157,7 +191,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('add-chat-message')
   async onNewChatMessage(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents, ServerToClientEvents>,
     @MessageBody() message: AddChatMessageClientEvent['payload'],
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);

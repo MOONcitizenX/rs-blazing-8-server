@@ -1,5 +1,7 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server } from 'socket.io';
+import { ClientToServerEvents } from 'src/gateway/socketTypes/ClientToServerEvents';
+import { ServerToClientEvents } from 'src/gateway/socketTypes/ServerToClientEvents';
 import { GetMeServerEvent } from 'src/webSocketsTypes';
 
 export class SomeAdapter extends IoAdapter {
@@ -8,7 +10,8 @@ export class SomeAdapter extends IoAdapter {
   users: Record<string, string> = {};
 
   createIOServer(port: number, options?: any): any {
-    const server: Server = super.createIOServer(port, options);
+    const server: Server<ClientToServerEvents, ServerToClientEvents> =
+      super.createIOServer(port, options);
     server.use((socket, next) => {
       if (!socket.handshake.auth.token) {
         socket
