@@ -223,6 +223,7 @@ export class Room {
     this.topCard = card.cardId;
     this.openDeck.push(this.topCard);
     this.removeCardFromHand(card, player);
+    console.log(player);
   }
 
   playJack(card: Card, player: Player) {
@@ -282,7 +283,6 @@ export class Room {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
-    console.log(currentPlayerIndex);
     if (currentPlayerIndex !== undefined || currentPlayerIndex !== null) {
       if (this.direction === 'CW') {
         this.playerTurn =
