@@ -44,7 +44,7 @@ export class GameService {
   leaveRoom(roomId: string, userId: string) {
     const roomState = this.findRoom('room', roomId);
     // Handle lobby client leave
-    if (roomState && roomState.status === 'lobby') {
+    if (roomState) {
       const playerIndex = roomState.players.findIndex(
         (player) => player.id === userId,
       );
@@ -55,15 +55,15 @@ export class GameService {
     }
 
     //Handle game client leave
-    if (roomState && roomState.status === 'playing') {
-      const playerIndex = roomState.players.findIndex(
-        (player) => player.id === userId,
-      );
-      if (playerIndex !== -1) {
-        roomState.players[playerIndex].online = false;
-        return roomState;
-      }
-    }
+    // if (roomState && roomState.status === 'playing') {
+    //   const playerIndex = roomState.players.findIndex(
+    //     (player) => player.id === userId,
+    //   );
+    //   if (playerIndex !== -1) {
+    //     roomState.players[playerIndex].online = false;
+    //     return roomState;
+    //   }
+    // }
     return null;
   }
 
