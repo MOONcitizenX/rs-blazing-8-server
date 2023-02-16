@@ -63,7 +63,7 @@ export class Room {
     this.closedDeck = shuffledCards;
     this.players.forEach((player, index) => {
       if (index === 0) {
-        player.cards = ['8R'];
+        player.cards = ['8R', '8B'];
       } else {
         player.cards = this.closedDeck.splice(-5, 5);
       }
