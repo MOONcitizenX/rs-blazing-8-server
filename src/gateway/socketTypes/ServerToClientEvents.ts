@@ -12,7 +12,7 @@ export interface ServerToClientEvents {
 
   'get-chat': (chat: ChatMessage[]) => void;
 
-  'winner-winner': ({ winner }: { winner: Player['id'] }) => void;
+  'winner-winner': ({ winner }: { winner: Player['id'] | null }) => void;
 
   'one-card-left': (isOneCardLeft: boolean) => void;
 

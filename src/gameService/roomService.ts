@@ -27,6 +27,7 @@ export class Room {
   private openDeck: Card['cardId'][] = [];
   topCard: Card['cardId'] | null;
   private maxPlayers = 5;
+  private minPlayers = 2;
 
   roomId: string;
   status: RoomStatus;
@@ -58,32 +59,37 @@ export class Room {
   }
 
   startNewGame() {
-    const cards = Object.keys(cardsMap);
-    const shuffledCards = shuffle(cards);
-    this.closedDeck = shuffledCards;
-    this.players.forEach(
-      (player) => (player.cards = this.closedDeck.splice(-5, 5)),
-    );
-    const startCard = this.closedDeck.pop();
-    if (startCard) {
-      this.openDeck = [startCard];
-      this.topCard = startCard;
-    }
-    const isWinnerInGame = this.players.find(
-      (player) => player.id === this.winner,
-    );
-    this.oneCardLeft = false;
-    this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
-    this.status = 'playing';
-    this.direction = 'CW';
-  }
+    if (
+      this.players.length >= this.minPlayers &&
+      this.players.length <= this.maxPlayers
+    ) {
+      const cards = Object.keys(cardsMap);
+      const shuffledCards = shuffle(cards);
+      this.closedDeck = shuffledCards;
+      this.players.forEach((player, index) => {
+        if (index === 0) {
+          player.cards = ['8R', '8B'];
+        } else {
+          player.cards = this.closedDeck.splice(-5, 5);
+        }
+      });
+      const startCard = this.closedDeck.pop();
+      if (startCard) {
+        this.openDeck = [startCard];
+        this.topCard = startCard;
+      }
+      const isWinnerInGame = this.players.find(
+        (player) => player.id === this.winner,
+      );
+      this.oneCardLeft = false;
+      this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
+      this.status = 'playing';
+      this.direction = 'CW';
 
-  finishGame(winnerId: string) {
-    const winner = this.findUserById(winnerId)?.name;
-    if (winner) {
-      this.winner = winner;
+      return true;
+    } else {
+      return false;
     }
-    this.status = 'lobby';
   }
 
   addNewPlayer({ userId, userName, avatarId }: Record<string, string>) {
@@ -298,6 +304,15 @@ export class Room {
 
   checkIsWinner() {
     const winner = this.players.find((player) => player.cards.length === 0);
+    if (winner) {
+      this.closedDeck = [];
+      this.openDeck = [];
+      this.status = 'lobby';
+      this.direction = 'CW';
+      this.topCard = null;
+      this.winner = winner.id;
+      this.oneCardLeft = false;
+    }
     return winner;
   }
 

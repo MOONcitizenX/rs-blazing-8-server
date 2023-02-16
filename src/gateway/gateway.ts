@@ -94,6 +94,9 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       room.convertToLobby();
+      const sockets = await this.server.in(room.roomId).fetchSockets();
+      this.gameService.sendPersonalStates(sockets, room);
+      this.gameService.sendWinner(sockets, null);
     }
   }
 
@@ -108,10 +111,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (room) {
       client.leave(room.roomId);
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      const leftPlayer = room.findUserById(client.data.userId);
-      if (leftPlayer) {
-        leftPlayer.online = false;
-      }
       this.gameService.sendPersonalStates(sockets, room);
       const chat = this.gameService.findChat(room.roomId);
       if (chat) {
@@ -131,12 +130,16 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      room.startNewGame();
-      console.log(room.roomId);
+      const isGameStarted = room.startNewGame();
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      this.gameService.sendPersonalStates(sockets, room);
-    } else {
-      console.log('NO ROOM');
+      if (isGameStarted) {
+        this.gameService.sendPersonalStates(sockets, room);
+        this.gameService.sendWinner(sockets, null);
+      } else {
+        sockets.forEach((socket) =>
+          socket.emit('error', { message: 'Unable to start the game' }),
+        );
+      }
     }
   }
 
