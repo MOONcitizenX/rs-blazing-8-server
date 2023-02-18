@@ -42,15 +42,16 @@ export class GameService {
   }
 
   leaveRoom(roomId: string, userId: string) {
-    const roomState = this.findRoom('room', roomId);
+    const room = this.findRoom('room', roomId);
     // Handle lobby client leave
-    if (roomState) {
-      const playerIndex = roomState.players.findIndex(
+    if (room) {
+      const playerIndex = room.players.findIndex(
         (player) => player.id === userId,
       );
       if (playerIndex !== -1) {
-        roomState.players.splice(playerIndex, 1);
-        return roomState;
+        room.players.splice(playerIndex, 1);
+        this.cleanRoomAndChat(roomId);
+        return room;
       }
     }
 
@@ -150,5 +151,20 @@ export class GameService {
     sockets.forEach((socket) => {
       socket.emit('one-card-left', isOneCardLeft);
     });
+  }
+
+  cleanRoomAndChat(roomId: string) {
+    const room = this.findRoom('room', roomId);
+    if (room && room.players.length === 0) {
+      const roomIndex = this.rooms.findIndex((room) => room.roomId === roomId);
+      this.rooms.splice(roomIndex, 1);
+      const chat = this.findChat(roomId);
+      if (chat) {
+        const chatIndex = this.chats.findIndex(
+          (chat) => chat.roomId === roomId,
+        );
+        this.chats.splice(chatIndex, 1);
+      }
+    }
   }
 }
