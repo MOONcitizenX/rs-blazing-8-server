@@ -108,6 +108,20 @@ export class GameService {
     });
   }
 
+  sendPersonalDrawCard(
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+    socketId: string,
+    cardId: string,
+  ) {
+    sockets.forEach((socket) => {
+      if (socket.data.userId === socketId) {
+        socket.emit('draw-card', { cardId });
+      } else {
+        socket.emit('draw-card');
+      }
+    });
+  }
+
   sendIsChooseColor(
     sockets: RemoteSocket<ServerToClientEvents, any>[],
     value: boolean,
