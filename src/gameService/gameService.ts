@@ -155,10 +155,41 @@ export class GameService {
 
   sendSwapCardPlayed(
     sockets: RemoteSocket<ServerToClientEvents, any>[],
-    playerId: Player['id'],
+    {
+      playerId,
+      nextPlayerId,
+      playerCards,
+      nextPlayerCards,
+    }: {
+      playerId: string;
+      nextPlayerId: string;
+      playerCards: string[];
+      nextPlayerCards: string[];
+    },
   ) {
     sockets.forEach((socket) => {
-      socket.emit('swap-cards', playerId);
+      if (socket.data.userId === playerId) {
+        socket.emit('swap-cards', {
+          playerId,
+          nextPlayerId,
+          playerCards,
+          nextPlayerCards: nextPlayerCards.length,
+        });
+      } else if (socket.data.userId === nextPlayerId) {
+        socket.emit('swap-cards', {
+          playerId,
+          nextPlayerId,
+          playerCards: playerCards.length,
+          nextPlayerCards,
+        });
+      } else {
+        socket.emit('swap-cards', {
+          playerId,
+          nextPlayerId,
+          playerCards: playerCards.length,
+          nextPlayerCards: nextPlayerCards.length,
+        });
+      }
     });
   }
 

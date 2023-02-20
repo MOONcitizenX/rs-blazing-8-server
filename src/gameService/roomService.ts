@@ -210,10 +210,10 @@ export class Room {
         this.playKing(playerCard, player);
         break;
       }
-      case 'swap': {
-        this.playSwap(playerCard, player);
-        break;
-      }
+      // case 'swap': {
+      //   this.playSwap(playerCard, player);
+      //   break;
+      // }
       case '8': {
         this.playRegularCard(playerCard, player);
         break;
@@ -251,7 +251,7 @@ export class Room {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
-    let nextPlayer;
+    let nextPlayer = {} as Player;
     if (this.direction === 'CW') {
       nextPlayer =
         currentPlayerIndex < this.players.length - 1
@@ -269,6 +269,13 @@ export class Room {
     const tempCards = player.cards;
     player.cards = nextPlayer.cards;
     nextPlayer.cards = tempCards;
+
+    return {
+      playerId: player.id,
+      nextPlayerId: nextPlayer.id,
+      playerCards: player.cards,
+      nextPlayerCards: nextPlayer.cards,
+    };
   }
 
   removeCardFromHand(playerCard: Card, player: Player) {
