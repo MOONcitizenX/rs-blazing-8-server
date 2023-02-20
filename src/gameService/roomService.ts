@@ -249,33 +249,41 @@ export class Room {
 
   playSwap(card: Card, player: Player) {
     const currentPlayerIndex = this.players.findIndex(
-      (player) => player.id === this.playerTurn,
+      (pl) => pl.id === player.id,
     );
-    let nextPlayer = {} as Player;
+    let nextPlayer;
     if (this.direction === 'CW') {
-      nextPlayer =
-        currentPlayerIndex === this.players.length - 1
-          ? this.players[0]
-          : this.players[currentPlayerIndex + 1];
-    }
-    if (this.direction === 'ACW') {
-      nextPlayer =
-        currentPlayerIndex === 0
-          ? this.players[this.players.length - 1]
-          : this.players[currentPlayerIndex - 1];
+      if (currentPlayerIndex === this.players.length - 1) {
+        nextPlayer = this.players[0];
+      } else {
+        nextPlayer = this.players[currentPlayerIndex + 1];
+      }
+    } else if (currentPlayerIndex === 0) {
+      nextPlayer = this.players[this.players.length - 1];
+    } else {
+      nextPlayer = this.players[currentPlayerIndex - 1];
     }
     this.openDeck.push(card.cardId);
     this.removeCardFromHand(card, player);
-    const tempCards = player.cards;
-    player.cards = nextPlayer.cards;
-    nextPlayer.cards = tempCards;
 
-    return {
+    this.swapCards(
+      currentPlayerIndex,
+      this.players.findIndex((pl) => pl.id === nextPlayer.id),
+    );
+    const response = {
       playerId: player.id,
       nextPlayerId: nextPlayer.id,
       playerCards: player.cards,
       nextPlayerCards: nextPlayer.cards,
     };
+    return response;
+  }
+
+  swapCards(player1index, player2index) {
+    [this.players[player1index].cards, this.players[player2index].cards] = [
+      this.players[player2index].cards,
+      this.players[player1index].cards,
+    ];
   }
 
   removeCardFromHand(playerCard: Card, player: Player) {
@@ -291,7 +299,6 @@ export class Room {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
-    console.log(currentPlayerIndex);
     if (currentPlayerIndex !== undefined || currentPlayerIndex !== null) {
       if (this.direction === 'CW') {
         this.playerTurn =
