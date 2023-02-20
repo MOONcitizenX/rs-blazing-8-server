@@ -16,5 +16,7 @@ export interface ServerToClientEvents {
 
   'one-card-left': (isOneCardLeft: boolean) => void;
 
+  'swap-cards': (playerId: string) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }

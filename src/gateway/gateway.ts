@@ -194,6 +194,9 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         message.card,
       );
       const sockets = await this.server.in(room.roomId).fetchSockets();
+      if (cardsMap[message.card].value === 'swap') {
+        this.gameService.sendSwapCardPlayed(sockets, client.data.userId);
+      }
       this.gameService.sendPersonalStates(sockets, room);
       if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
