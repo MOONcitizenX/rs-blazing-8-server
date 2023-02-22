@@ -28,7 +28,13 @@ export interface ServerToClientEvents {
     nextPlayerCards: string[] | number;
   }) => void;
 
-  'timer-update': ({ id }: { id: string }) => void;
+  'timer-update': ({
+    id,
+    timerCount,
+  }: {
+    id: string;
+    timerCount: number;
+  }) => void;
 
   'timer-out': ({ id }: { id: string }) => void;
 

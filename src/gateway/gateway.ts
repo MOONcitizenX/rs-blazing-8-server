@@ -39,10 +39,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(client.data.userId, ' connected');
     const clientRoom = this.gameService.reconnect(client.data.userId);
     if (clientRoom) {
-      const { room, chat } = clientRoom;
+      const { room, chat, id, timerCount } = clientRoom;
       client.join(room.roomId);
       client.emit('room-state', room);
       client.emit('get-chat', chat.chat);
+      client.emit('timer-update', { id, timerCount });
     }
   }
 

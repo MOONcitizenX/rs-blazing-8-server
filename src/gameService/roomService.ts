@@ -32,7 +32,7 @@ export class Room {
   private maxPlayers = 5;
   private minPlayers = 2;
   private timer: NodeJS.Timer | null = null;
-  private timerCount = 30;
+  timerCount = 30;
   private sockets: RemoteSocket<ServerToClientEvents, any>[] = [];
 
   roomId: string;

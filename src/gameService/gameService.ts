@@ -76,7 +76,12 @@ export class GameService {
       const personalRoomState = room.getUserState(userId);
       if (personalRoomState && player && chat) {
         player.online = true;
-        return { room: personalRoomState, chat };
+        return {
+          room: personalRoomState,
+          chat,
+          id: room.playerTurn,
+          timerCount: room.timerCount,
+        };
       }
     }
     return null;
