@@ -66,11 +66,8 @@ export class Room {
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
-      this.players[0].cards = ['SR', 'SG'];
-      this.players.forEach((player, index) => {
-        if (index !== 0) {
-          player.cards = this.closedDeck.splice(-5, 5);
-        }
+      this.players.forEach((player) => {
+        player.cards = this.closedDeck.splice(-5, 5);
       });
       const startCard = this.closedDeck.pop();
       if (startCard) {
