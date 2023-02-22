@@ -98,6 +98,10 @@ export class Room {
     }
   }
 
+  updateSockets(sockets: RemoteSocket<ServerToClientEvents, any>[]) {
+    this.sockets = sockets;
+  }
+
   addNewPlayer({ userId, userName, avatarId }: Record<string, string>) {
     if (
       !this.findUserById(userId) &&
