@@ -373,6 +373,7 @@ export class Room {
     this.sockets.forEach((socket) => {
       socket.emit('timer-update', {
         id: this.playerTurn,
+        timerCount: this.timerCount,
       });
     });
   }
