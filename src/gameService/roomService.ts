@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { pick, shuffle } from 'lodash';
-import { RemoteSocket } from 'socket.io';
+import { RemoteSocket, Server } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { Card, cardsMap } from 'src/data/cardsMap';
 import { ServerToClientEvents } from 'src/gateway/socketTypes/ServerToClientEvents';
@@ -33,7 +33,7 @@ export class Room {
   private minPlayers = 2;
   private timer: NodeJS.Timer | null = null;
   timerCount = 30;
-  private sockets: RemoteSocket<ServerToClientEvents, any>[] = [];
+  private server!: Server<ServerToClientEvents>;
 
   roomId: string;
   status: RoomStatus;
@@ -66,12 +66,12 @@ export class Room {
     this.playerTurn = this.winner || this.players[0].id;
   }
 
-  startNewGame(sockets: RemoteSocket<ServerToClientEvents, any>[]) {
+  startNewGame(server: Server<ServerToClientEvents>) {
     if (
       this.players.length >= this.minPlayers &&
       this.players.length <= this.maxPlayers
     ) {
-      this.sockets = sockets;
+      this.server = server;
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
@@ -96,10 +96,6 @@ export class Room {
     } else {
       return false;
     }
-  }
-
-  updateSockets(sockets: RemoteSocket<ServerToClientEvents, any>[]) {
-    this.sockets = sockets;
   }
 
   addNewPlayer({ userId, userName, avatarId }: Record<string, string>) {
@@ -328,7 +324,6 @@ export class Room {
       }
       this.isCurrentPlayerDraw = false;
       this.startOrResetTimer();
-      this.sendPersonalStates();
     }
   }
 
@@ -353,15 +348,16 @@ export class Room {
     return oneCardLeft;
   }
 
-  startOrResetTimer() {
+  async startOrResetTimer() {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+      this.timerCount = 30;
     }
+    const sockets = await this.server.in(this.roomId).fetchSockets();
     this.timer = setInterval(() => {
       if (this.timerCount <= 0) {
-        this.timerCount = 30;
-        this.sockets.forEach((socket) => {
+        sockets.forEach((socket) => {
           socket.emit('timer-update', {
             id: this.playerTurn,
             timerCount: this.timerCount,
@@ -372,10 +368,9 @@ export class Room {
         }
         this.movePlayerTurn();
       }
-
       this.timerCount -= 1;
     }, 1000);
-    this.sockets.forEach((socket) => {
+    sockets.forEach((socket) => {
       socket.emit('timer-update', {
         id: this.playerTurn,
         timerCount: this.timerCount,
@@ -383,8 +378,10 @@ export class Room {
     });
   }
 
-  sendPersonalStates(this: Room) {
-    const sockets = this.sockets as RemoteSocket<DefaultEventsMap, any>[];
+  sendPersonalStates(
+    this: Room,
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+  ) {
     sockets.forEach((socket) => {
       socket.emit('room-state', this.getUserState(socket.data.userId));
     });

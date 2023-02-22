@@ -35,14 +35,14 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(client.data.userId, ' disconnected');
     // const roomState = this.gameService.reconnect(client.data.userId);
   }
-  async handleConnection(client: Socket, ...args: any[]) {
+  handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
     const clientRoom = this.gameService.reconnect(client.data.userId);
     if (clientRoom) {
       const { room, chat, id, timerCount } = clientRoom;
-      const sockets = await this.server.in(room.roomId).fetchSockets();
-      const foundRoom = this.gameService.findRoom('user', client.data.userId);
-      foundRoom?.updateSockets(sockets);
+      // const sockets = await this.server.in(room.roomId).fetchSockets();
+      // const foundRoom = this.gameService.findRoom('user', client.data.userId);
+      // foundRoom?.updateSockets(sockets);
       client.join(room.roomId);
       client.emit('room-state', room);
       client.emit('get-chat', chat.chat);
@@ -135,7 +135,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      const isGameStarted = room.startNewGame(sockets);
+      const isGameStarted = room.startNewGame(this.server);
       if (isGameStarted) {
         this.gameService.sendPersonalStates(sockets, room);
         this.gameService.sendWinner(sockets, null);
