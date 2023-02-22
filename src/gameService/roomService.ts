@@ -150,7 +150,7 @@ export class Room {
     };
   }
 
-  drawCard(userId: string) {
+  async drawCard(userId: string) {
     if (!this.isCurrentPlayerDraw) {
       const card = this.closedDeck.pop();
       if (card) {
@@ -159,6 +159,10 @@ export class Room {
           player.cards.push(card);
         }
         this.isCurrentPlayerDraw = true;
+        const sockets = await this.server.in(this.roomId).fetchSockets();
+        sockets.forEach((socket) => {
+          socket.emit('card-draw', { id: userId });
+        });
         return card;
       }
     }

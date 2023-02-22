@@ -36,5 +36,7 @@ export interface ServerToClientEvents {
     timerCount: number;
   }) => void;
 
+  'card-draw': ({ id }: { id: string }) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }
