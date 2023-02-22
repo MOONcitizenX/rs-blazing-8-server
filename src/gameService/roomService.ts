@@ -358,7 +358,6 @@ export class Room {
       this.timer = null;
       this.timerCount = 30;
     }
-    const sockets = await this.server.in(this.roomId).fetchSockets();
     this.timer = setInterval(() => {
       if (this.timerCount <= 0) {
         if (!this.isCurrentPlayerDraw) {
@@ -367,7 +366,10 @@ export class Room {
         this.movePlayerTurn();
       }
       this.timerCount -= 1;
+      console.log('count', this.timerCount);
     }, 1000);
+
+    const sockets = await this.server.in(this.roomId).fetchSockets();
     this.sendPersonalStates(sockets);
     sockets.forEach((socket) => {
       socket.emit('timer-update', {
