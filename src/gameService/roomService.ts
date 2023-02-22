@@ -358,8 +358,9 @@ export class Room {
       if (this.timerCount <= 0) {
         this.timerCount = 30;
         this.sockets.forEach((socket) => {
-          socket.emit('timer-out', {
+          socket.emit('timer-update', {
             id: this.playerTurn,
+            timerCount: this.timerCount,
           });
         });
         if (this.isCurrentPlayerDraw) {

@@ -36,7 +36,5 @@ export interface ServerToClientEvents {
     timerCount: number;
   }) => void;
 
-  'timer-out': ({ id }: { id: string }) => void;
-
   error: ({ message }: { message: string }, func?: () => void) => void;
 }
