@@ -356,6 +356,7 @@ export class Room {
     }
     this.timer = setInterval(() => {
       if (this.timerCount <= 0) {
+        this.timerCount = 30;
         this.sockets.forEach((socket) => {
           socket.emit('timer-out', {
             id: this.playerTurn,
