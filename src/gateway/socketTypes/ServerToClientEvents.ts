@@ -28,5 +28,15 @@ export interface ServerToClientEvents {
     nextPlayerCards: string[] | number;
   }) => void;
 
+  'timer-update': ({
+    id,
+    timerCount,
+  }: {
+    id: string;
+    timerCount: number;
+  }) => void;
+
+  'card-draw': ({ id }: { id: string }) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }

@@ -33,16 +33,20 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private gameService: GameService) {}
   handleDisconnect(client: Socket) {
     console.log(client.data.userId, ' disconnected');
-    const roomState = this.gameService.reconnect(client.data.userId);
+    // const roomState = this.gameService.reconnect(client.data.userId);
   }
   handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
     const clientRoom = this.gameService.reconnect(client.data.userId);
     if (clientRoom) {
-      const { room, chat } = clientRoom;
+      const { room, chat, id, timerCount } = clientRoom;
+      // const sockets = await this.server.in(room.roomId).fetchSockets();
+      // const foundRoom = this.gameService.findRoom('user', client.data.userId);
+      // foundRoom?.updateSockets(sockets);
       client.join(room.roomId);
       client.emit('room-state', room);
       client.emit('get-chat', chat.chat);
+      client.emit('timer-update', { id, timerCount });
     }
   }
 
@@ -130,8 +134,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      const isGameStarted = room.startNewGame();
       const sockets = await this.server.in(room.roomId).fetchSockets();
+      const isGameStarted = room.startNewGame(this.server);
       if (isGameStarted) {
         this.gameService.sendPersonalStates(sockets, room);
         this.gameService.sendWinner(sockets, null);
@@ -150,7 +154,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      const card = room.drawCard(client.data.userId);
+      const card = await room.drawCard(client.data.userId);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       if (card) {
         const oneCardLeft = room.checkIsOneCardLeft();
