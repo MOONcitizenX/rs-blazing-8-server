@@ -223,7 +223,7 @@ export class Room {
 
   playRegularCard(card: Card, player: Player) {
     this.topCard = card.cardId;
-    this.openDeck.push(this.topCard);
+    this.openDeck.unshift(this.topCard);
     this.removeCardFromHand(card, player);
   }
 
@@ -263,7 +263,7 @@ export class Room {
     } else {
       nextPlayer = this.players[currentPlayerIndex - 1];
     }
-    this.openDeck.push(card.cardId);
+    this.openDeck.unshift(card.cardId);
     this.removeCardFromHand(card, player);
 
     this.swapCards(
