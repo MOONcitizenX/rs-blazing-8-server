@@ -361,7 +361,7 @@ export class Room {
     const sockets = await this.server.in(this.roomId).fetchSockets();
     this.timer = setInterval(() => {
       if (this.timerCount <= 0) {
-        if (this.isCurrentPlayerDraw) {
+        if (!this.isCurrentPlayerDraw) {
           this.drawCard(this.playerTurn);
         }
         this.movePlayerTurn();
