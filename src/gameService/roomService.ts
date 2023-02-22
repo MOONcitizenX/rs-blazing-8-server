@@ -32,7 +32,7 @@ export class Room {
   private maxPlayers = 5;
   private minPlayers = 2;
   private timer: NodeJS.Timer | null = null;
-  private timerCount = 0;
+  private timerCount = 30;
   private sockets: RemoteSocket<ServerToClientEvents, any>[] = [];
 
   roomId: string;
@@ -151,14 +151,16 @@ export class Room {
   }
 
   drawCard(userId: string) {
-    const card = this.closedDeck.pop();
-    if (card) {
-      const player = this.findUserById(userId);
-      if (player) {
-        player.cards.push(card);
+    if (!this.isCurrentPlayerDraw) {
+      const card = this.closedDeck.pop();
+      if (card) {
+        const player = this.findUserById(userId);
+        if (player) {
+          player.cards.push(card);
+        }
+        this.isCurrentPlayerDraw = true;
+        return card;
       }
-      this.isCurrentPlayerDraw = true;
-      return card;
     }
     return null;
   }
@@ -353,7 +355,7 @@ export class Room {
       this.timer = null;
     }
     this.timer = setInterval(() => {
-      if (this.timerCount >= 30) {
+      if (this.timerCount <= 0) {
         this.sockets.forEach((socket) => {
           socket.emit('timer-out', {
             id: this.playerTurn,
@@ -364,19 +366,19 @@ export class Room {
         }
         this.movePlayerTurn();
       }
-      this.sockets.forEach((socket) => {
-        socket.emit('timer-update', {
-          id: this.playerTurn,
-          timerCount: this.timerCount,
-        });
-      });
-      this.timerCount += 1;
+
+      this.timerCount -= 1;
     }, 1000);
+    this.sockets.forEach((socket) => {
+      socket.emit('timer-update', {
+        id: this.playerTurn,
+      });
+    });
   }
 
   sendPersonalStates(this: Room) {
-    const s = this.sockets as RemoteSocket<DefaultEventsMap, any>[];
-    s.forEach((socket) => {
+    const sockets = this.sockets as RemoteSocket<DefaultEventsMap, any>[];
+    sockets.forEach((socket) => {
       socket.emit('room-state', this.getUserState(socket.data.userId));
     });
   }
