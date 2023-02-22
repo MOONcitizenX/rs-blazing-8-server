@@ -1,6 +1,9 @@
 import { randomUUID } from 'crypto';
 import { pick, shuffle } from 'lodash';
+import { RemoteSocket } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { Card, cardsMap } from 'src/data/cardsMap';
+import { ServerToClientEvents } from 'src/gateway/socketTypes/ServerToClientEvents';
 
 export type RoomStatus = 'lobby' | 'playing';
 
@@ -28,11 +31,16 @@ export class Room {
   topCard: Card['cardId'] | null;
   private maxPlayers = 5;
   private minPlayers = 2;
+  private timer: NodeJS.Timer | null = null;
+  private timerCount = 0;
+  private sockets: RemoteSocket<ServerToClientEvents, any>[] = [];
 
   roomId: string;
   status: RoomStatus;
   direction: 'CW' | 'ACW';
   playerTurn: string;
+  isCurrentPlayerDraw = false;
+  isCurrentPlayerPass = false;
   private winner: string;
   private oneCardLeft: boolean;
   players: Player[];
@@ -58,11 +66,12 @@ export class Room {
     this.playerTurn = this.winner || this.players[0].id;
   }
 
-  startNewGame() {
+  startNewGame(sockets: RemoteSocket<ServerToClientEvents, any>[]) {
     if (
       this.players.length >= this.minPlayers &&
       this.players.length <= this.maxPlayers
     ) {
+      this.sockets = sockets;
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
@@ -81,6 +90,7 @@ export class Room {
       this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
       this.status = 'playing';
       this.direction = 'CW';
+      this.startOrResetTimer();
 
       return true;
     } else {
@@ -147,6 +157,7 @@ export class Room {
       if (player) {
         player.cards.push(card);
       }
+      this.isCurrentPlayerDraw = true;
       return card;
     }
     return null;
@@ -309,6 +320,9 @@ export class Room {
             ? this.players[this.players.length - 1].id
             : this.players[currentPlayerIndex - 1].id;
       }
+      this.isCurrentPlayerDraw = false;
+      this.startOrResetTimer();
+      this.sendPersonalStates();
     }
   }
 
@@ -331,5 +345,39 @@ export class Room {
       (player) => player.cards.length === 1,
     );
     return oneCardLeft;
+  }
+
+  startOrResetTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    this.timer = setInterval(() => {
+      if (this.timerCount >= 30) {
+        this.sockets.forEach((socket) => {
+          socket.emit('timer-out', {
+            id: this.playerTurn,
+          });
+        });
+        if (this.isCurrentPlayerDraw) {
+          this.drawCard(this.playerTurn);
+        }
+        this.movePlayerTurn();
+      }
+      this.sockets.forEach((socket) => {
+        socket.emit('timer-update', {
+          id: this.playerTurn,
+          timerCount: this.timerCount,
+        });
+      });
+      this.timerCount += 1;
+    }, 1000);
+  }
+
+  sendPersonalStates(this: Room) {
+    const s = this.sockets as RemoteSocket<DefaultEventsMap, any>[];
+    s.forEach((socket) => {
+      socket.emit('room-state', this.getUserState(socket.data.userId));
+    });
   }
 }
