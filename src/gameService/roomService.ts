@@ -357,12 +357,6 @@ export class Room {
     const sockets = await this.server.in(this.roomId).fetchSockets();
     this.timer = setInterval(() => {
       if (this.timerCount <= 0) {
-        sockets.forEach((socket) => {
-          socket.emit('timer-update', {
-            id: this.playerTurn,
-            timerCount: this.timerCount,
-          });
-        });
         if (this.isCurrentPlayerDraw) {
           this.drawCard(this.playerTurn);
         }
@@ -370,6 +364,7 @@ export class Room {
       }
       this.timerCount -= 1;
     }, 1000);
+    this.sendPersonalStates(sockets);
     sockets.forEach((socket) => {
       socket.emit('timer-update', {
         id: this.playerTurn,
