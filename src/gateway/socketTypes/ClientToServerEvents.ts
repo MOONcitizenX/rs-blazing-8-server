@@ -27,4 +27,6 @@ export interface ClientToServerEvents {
   'add-chat-message': () => {
     message: string;
   };
+
+  emoji: ({ emojiIndex }: { emojiIndex: number }) => void;
 }
