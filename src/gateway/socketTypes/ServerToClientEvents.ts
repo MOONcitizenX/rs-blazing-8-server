@@ -38,5 +38,7 @@ export interface ServerToClientEvents {
 
   'card-draw': ({ id }: { id: string }) => void;
 
+  'player-played-card': ({ id }: { id: string }) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }

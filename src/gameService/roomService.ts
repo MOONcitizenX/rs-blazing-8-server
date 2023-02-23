@@ -173,7 +173,13 @@ export class Room {
     const player = this.findUserById(userId);
     const playerCard = cardsMap[cardName];
     const topCard = this.topCard ? cardsMap[this.topCard] : null;
-    if (topCard && player && this.checkIsCardPlayable(playerCard, topCard)) {
+    const isPlayerTurn = userId === this.playerTurn;
+    if (
+      topCard &&
+      player &&
+      isPlayerTurn &&
+      this.checkIsCardPlayable(playerCard, topCard)
+    ) {
       this.playCardOnBehavior(playerCard, player);
       this.movePlayerTurn();
     }
@@ -224,10 +230,6 @@ export class Room {
         this.playKing(playerCard, player);
         break;
       }
-      // case 'swap': {
-      //   this.playSwap(playerCard, player);
-      //   break;
-      // }
       case '8': {
         this.playRegularCard(playerCard, player);
         break;
@@ -280,10 +282,15 @@ export class Room {
     this.openDeck.unshift(card.cardId);
     this.removeCardFromHand(card, player);
 
-    this.swapCards(
-      currentPlayerIndex,
-      this.players.findIndex((pl) => pl.id === nextPlayer.id),
-    );
+    // this.swapCards(
+    //   currentPlayerIndex,
+    //   this.players.findIndex((pl) => pl.id === nextPlayer.id),
+    // );
+
+    const tempCards = this.players[currentPlayerIndex].cards;
+    this.players[currentPlayerIndex].cards = nextPlayer?.cards;
+    nextPlayer.cards = tempCards;
+
     const response = {
       playerId: player.id,
       nextPlayerId: nextPlayer.id,
@@ -293,12 +300,12 @@ export class Room {
     return response;
   }
 
-  swapCards(player1index, player2index) {
-    [this.players[player1index].cards, this.players[player2index].cards] = [
-      this.players[player2index].cards,
-      this.players[player1index].cards,
-    ];
-  }
+  // swapCards(player1index, player2index) {
+  //   [this.players[player1index].cards, this.players[player2index].cards] = [
+  //     this.players[player2index].cards,
+  //     this.players[player1index].cards,
+  //   ];
+  // }
 
   removeCardFromHand(playerCard: Card, player: Player) {
     const cardIndex = player.cards.findIndex(
@@ -316,9 +323,9 @@ export class Room {
     if (currentPlayerIndex !== undefined || currentPlayerIndex !== null) {
       if (this.direction === 'CW') {
         this.playerTurn =
-          currentPlayerIndex < this.players.length - 1
-            ? this.players[currentPlayerIndex + 1].id
-            : this.players[0].id;
+          currentPlayerIndex === this.players.length - 1
+            ? this.players[0].id
+            : this.players[currentPlayerIndex + 1].id;
       }
       if (this.direction === 'ACW') {
         this.playerTurn =

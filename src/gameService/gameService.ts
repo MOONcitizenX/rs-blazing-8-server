@@ -198,6 +198,15 @@ export class GameService {
     });
   }
 
+  sendPlayerPlayedCard(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    playerId: string,
+  ) {
+    sockets.forEach((socket) =>
+      socket.emit('player-played-card', { id: playerId }),
+    );
+  }
+
   cleanRoomAndChat(roomId: string) {
     const room = this.findRoom('room', roomId);
     if (room && room.players.length === 0) {
