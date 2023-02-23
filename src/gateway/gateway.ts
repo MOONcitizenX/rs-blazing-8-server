@@ -261,4 +261,20 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
+
+  @SubscribeMessage('emoji')
+  async onEmoji(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents>,
+    @MessageBody() message: { emojiIndex: number },
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      const player = room.findUserById(client.data.userId);
+      if (player) {
+        const sockets = await this.server.in(room.roomId).fetchSockets();
+        this.gameService.sendEmoji(sockets, player.id, message.emojiIndex);
+      }
+    }
+  }
 }

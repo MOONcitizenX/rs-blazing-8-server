@@ -221,4 +221,17 @@ export class GameService {
       }
     }
   }
+
+  sendEmoji(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    playerId: string,
+    emojiIndex: number,
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('emoji', {
+        id: playerId,
+        emojiIndex,
+      });
+    });
+  }
 }

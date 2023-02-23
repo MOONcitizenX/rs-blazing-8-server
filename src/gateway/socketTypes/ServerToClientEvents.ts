@@ -40,5 +40,7 @@ export interface ServerToClientEvents {
 
   'player-played-card': ({ id }: { id: string }) => void;
 
+  emoji: ({ id, emojiIndex }: { id: string; emojiIndex: number }) => void;
+
   error: ({ message }: { message: string }, func?: () => void) => void;
 }
