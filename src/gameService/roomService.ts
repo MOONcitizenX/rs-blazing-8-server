@@ -349,6 +349,31 @@ export class Room {
       this.winner = winner.id;
       this.oneCardLeft = false;
     }
+    if (this.closedDeck.length === 0) {
+      const moveAbility: boolean[] = [];
+      const topCard = this.topCard ? cardsMap[this.topCard] : null;
+      this.players.forEach((player) => {
+        moveAbility.push(
+          player.cards.some((card) => {
+            const [value, suit] = card.split('');
+            if (value === topCard?.value || value === '8') {
+              return true;
+            } else if (suit === topCard?.color) {
+              return true;
+            }
+          }),
+        );
+      });
+      const isNoMoreMoves = moveAbility.every((el) => el === false);
+      if (isNoMoreMoves) {
+        const winner = this.players.sort(
+          (a, b) => a.cards.length - b.cards.length,
+        )[0];
+        this.winner = winner.id;
+        this.oneCardLeft = false;
+        return winner;
+      }
+    }
     return winner;
   }
 
