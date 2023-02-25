@@ -338,16 +338,20 @@ export class Room {
     }
   }
 
+  resetRoom(id: string) {
+    this.closedDeck = [];
+    this.openDeck = [];
+    this.status = 'lobby';
+    this.direction = 'CW';
+    this.topCard = null;
+    this.winner = id;
+    this.oneCardLeft = false;
+  }
+
   checkIsWinner() {
     const winner = this.players.find((player) => player.cards.length === 0);
     if (winner) {
-      this.closedDeck = [];
-      this.openDeck = [];
-      this.status = 'lobby';
-      this.direction = 'CW';
-      this.topCard = null;
-      this.winner = winner.id;
-      this.oneCardLeft = false;
+      this.resetRoom(winner.id);
     }
     if (this.closedDeck.length === 0) {
       const moveAbility: boolean[] = [];
@@ -369,8 +373,7 @@ export class Room {
         const winner = this.players.sort(
           (a, b) => a.cards.length - b.cards.length,
         )[0];
-        this.winner = winner.id;
-        this.oneCardLeft = false;
+        this.resetRoom(winner.id);
         return winner;
       }
     }
