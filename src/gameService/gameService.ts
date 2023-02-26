@@ -210,6 +210,10 @@ export class GameService {
   cleanRoomAndChat(roomId: string) {
     const room = this.findRoom('room', roomId);
     if (room && room.players.length === 0) {
+      if (room.timer) {
+        clearInterval(room.timer);
+        room.timer = null;
+      }
       const roomIndex = this.rooms.findIndex((room) => room.roomId === roomId);
       this.rooms.splice(roomIndex, 1);
       const chat = this.findChat(roomId);

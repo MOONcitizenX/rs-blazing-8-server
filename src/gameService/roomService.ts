@@ -31,7 +31,7 @@ export class Room {
   topCard: Card['cardId'] | null;
   private maxPlayers = 5;
   private minPlayers = 2;
-  private timer: NodeJS.Timer | null = null;
+  timer: NodeJS.Timer | null = null;
   timerCount = 30;
   private server!: Server<ServerToClientEvents>;
 
