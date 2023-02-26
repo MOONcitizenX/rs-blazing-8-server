@@ -356,6 +356,10 @@ export class Room {
   checkIsWinner() {
     const winner = this.players.find((player) => player.cards.length === 0);
     if (winner) {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
       this.resetRoom(winner.id);
     }
     if (this.closedDeck.length === 0) {
