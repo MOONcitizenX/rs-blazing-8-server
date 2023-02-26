@@ -78,7 +78,10 @@ export class Room {
       this.players.forEach((player) => {
         player.cards = this.closedDeck.splice(-5, 5);
       });
-      const startCard = this.closedDeck.pop();
+      const startCardIndex = this.closedDeck.findLastIndex(
+        (el) => el !== 'SR' && el !== 'SG',
+      );
+      const startCard = this.closedDeck.splice(startCardIndex, 1)[0];
       if (startCard) {
         this.openDeck = [startCard];
         this.topCard = startCard;
@@ -316,7 +319,7 @@ export class Room {
     player.cards.splice(cardIndex, 1);
   }
 
-  movePlayerTurn() {
+  movePlayerTurn = () => {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
@@ -336,7 +339,7 @@ export class Room {
       this.isCurrentPlayerDraw = false;
       this.startOrResetTimer();
     }
-  }
+  };
 
   resetRoom(id: string) {
     this.closedDeck = [];
@@ -421,5 +424,29 @@ export class Room {
     sockets.forEach((socket) => {
       socket.emit('room-state', this.getUserState(socket.data.userId));
     });
+  }
+}
+
+class old {
+  _age;
+  constructor(age) {
+    this._age = age;
+  }
+
+  hi() {
+    console.log(`my age is ${this._age}`);
+  }
+}
+
+class newClass extends old {
+  _name;
+  constructor(age, name) {
+    super(age);
+    this._name = name;
+  }
+
+  hi() {
+    super.hi();
+    console.log(`and my name is ${this._name}`);
   }
 }
