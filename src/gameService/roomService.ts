@@ -410,7 +410,6 @@ export class Room {
         this.movePlayerTurn();
       }
       this.timerCount -= 1;
-      console.log('count', this.timerCount);
     }, 1000);
 
     const sockets = await this.server.in(this.roomId).fetchSockets();
@@ -430,29 +429,5 @@ export class Room {
     sockets.forEach((socket) => {
       socket.emit('room-state', this.getUserState(socket.data.userId));
     });
-  }
-}
-
-class old {
-  _age;
-  constructor(age) {
-    this._age = age;
-  }
-
-  hi() {
-    console.log(`my age is ${this._age}`);
-  }
-}
-
-class newClass extends old {
-  _name;
-  constructor(age, name) {
-    super(age);
-    this._name = name;
-  }
-
-  hi() {
-    super.hi();
-    console.log(`and my name is ${this._name}`);
   }
 }
