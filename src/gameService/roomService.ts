@@ -264,7 +264,7 @@ export class Room {
     this.playRegularCard(card, player);
     const otherPlayers = this.players.filter((user) => user.id !== player.id);
     if (this.closedDeck.length <= this.players.length) {
-      const cardsFromBottom = this.openDeck.splice(0, this.players.length);
+      const cardsFromBottom = this.openDeck.splice(0, this.players.length - 1);
       this.closedDeck.push(...cardsFromBottom);
     }
     otherPlayers.forEach((user) => this.drawCard(user.id));
