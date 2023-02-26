@@ -78,7 +78,11 @@ export class Room {
       this.players.forEach((player) => {
         player.cards = this.closedDeck.splice(-5, 5);
       });
-      const startCard = this.closedDeck.pop();
+      let startCard = this.closedDeck.pop();
+      while (startCard === 'SR' || startCard === 'SG') {
+        this.closedDeck.splice(3, 0, startCard);
+        startCard = this.closedDeck.pop();
+      }
       if (startCard) {
         this.openDeck = [startCard];
         this.topCard = startCard;
