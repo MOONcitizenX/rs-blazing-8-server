@@ -164,7 +164,11 @@ export class Room {
         this.isCurrentPlayerDraw = true;
         const sockets = await this.server.in(this.roomId).fetchSockets();
         sockets.forEach((socket) => {
-          socket.emit('card-draw', { id: userId });
+          if (socket.data.userId === userId) {
+            socket.emit('card-draw', { id: userId, cardId: card });
+          } else {
+            socket.emit('card-draw', { id: userId });
+          }
         });
         return card;
       }
