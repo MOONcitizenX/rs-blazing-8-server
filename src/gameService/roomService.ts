@@ -303,19 +303,17 @@ export class Room {
     return response;
   }
 
-  // swapCards(player1index, player2index) {
-  //   [this.players[player1index].cards, this.players[player2index].cards] = [
-  //     this.players[player2index].cards,
-  //     this.players[player1index].cards,
-  //   ];
-  // }
-
   removeCardFromHand(playerCard: Card, player: Player) {
-    const cardIndex = player.cards.findIndex(
-      (card) =>
-        cardsMap[card].value === playerCard.value &&
-        cardsMap[card].color === playerCard.color,
-    );
+    const cardIndex = player.cards.findIndex((card) => {
+      if (cardsMap[card].value === '8') {
+        return cardsMap[card].value === playerCard.value;
+      } else {
+        return (
+          cardsMap[card].value === playerCard.value &&
+          cardsMap[card].color === playerCard.color
+        );
+      }
+    });
     player.cards.splice(cardIndex, 1);
   }
 

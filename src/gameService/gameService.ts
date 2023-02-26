@@ -201,10 +201,15 @@ export class GameService {
   sendPlayerPlayedCard(
     sockets: RemoteSocket<ServerToClientEvents, any>[],
     playerId: string,
+    cardId: string,
   ) {
-    sockets.forEach((socket) =>
-      socket.emit('player-played-card', { id: playerId }),
-    );
+    sockets.forEach((socket) => {
+      if (socket.data.userId === playerId) {
+        socket.emit('player-played-card', { id: playerId, cardId });
+      } else {
+        socket.emit('player-played-card', { id: playerId });
+      }
+    });
   }
 
   cleanRoomAndChat(roomId: string) {

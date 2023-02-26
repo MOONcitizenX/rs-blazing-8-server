@@ -198,8 +198,15 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         message.card,
       );
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      if (cardsMap[message.card].value !== 'swap') {
-        this.gameService.sendPlayerPlayedCard(sockets, client.data.userId);
+      if (
+        cardsMap[message.card].value !== 'swap' &&
+        cardsMap[message.card].value !== '8'
+      ) {
+        this.gameService.sendPlayerPlayedCard(
+          sockets,
+          client.data.userId,
+          message.card,
+        );
       } else if (cardsMap[message.card].value === 'swap') {
         const player = room.findUserById(client.data.userId);
         if (player) {
@@ -218,6 +225,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       } else if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
+        this.gameService.sendPlayerPlayedCard(
+          sockets,
+          client.data.userId,
+          message.card,
+        );
         this.gameService.sendPersonalStates(sockets, room);
       } else {
         this.gameService.sendPersonalStates(sockets, room);

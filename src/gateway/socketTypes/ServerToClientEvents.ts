@@ -38,7 +38,13 @@ export interface ServerToClientEvents {
 
   'card-draw': ({ id }: { id: string }) => void;
 
-  'player-played-card': ({ id }: { id: string }) => void;
+  'player-played-card': ({
+    id,
+    cardId,
+  }: {
+    id: string;
+    cardId?: string;
+  }) => void;
 
   emoji: ({ id, emojiIndex }: { id: string; emojiIndex: number }) => void;
 
