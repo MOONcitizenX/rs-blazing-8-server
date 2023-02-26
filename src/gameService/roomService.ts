@@ -257,7 +257,7 @@ export class Room {
     this.playRegularCard(card, player);
     const otherPlayers = this.players.filter((user) => user.id !== player.id);
     if (this.closedDeck.length <= this.players.length) {
-      const cardsFromBottom = this.openDeck.splice(0, this.players.length);
+      const cardsFromBottom = this.openDeck.splice(0, this.players.length - 1);
       this.closedDeck.push(...cardsFromBottom);
     }
     otherPlayers.forEach((user) => this.drawCard(user.id));
@@ -308,11 +308,16 @@ export class Room {
   // }
 
   removeCardFromHand(playerCard: Card, player: Player) {
-    const cardIndex = player.cards.findIndex(
-      (card) =>
-        cardsMap[card].value === playerCard.value &&
-        cardsMap[card].color === playerCard.color,
-    );
+    const cardIndex = player.cards.findIndex((card) => {
+      if (cardsMap[card].value === '8') {
+        return cardsMap[card].value === playerCard.value;
+      } else {
+        return (
+          cardsMap[card].value === playerCard.value &&
+          cardsMap[card].color === playerCard.color
+        );
+      }
+    });
     player.cards.splice(cardIndex, 1);
   }
 
