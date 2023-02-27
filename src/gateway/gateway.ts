@@ -33,16 +33,20 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private gameService: GameService) {}
   handleDisconnect(client: Socket) {
     console.log(client.data.userId, ' disconnected');
-    const roomState = this.gameService.reconnect(client.data.userId);
+    // const roomState = this.gameService.reconnect(client.data.userId);
   }
   handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
     const clientRoom = this.gameService.reconnect(client.data.userId);
     if (clientRoom) {
-      const { room, chat } = clientRoom;
+      const { room, chat, id, timerCount } = clientRoom;
+      // const sockets = await this.server.in(room.roomId).fetchSockets();
+      // const foundRoom = this.gameService.findRoom('user', client.data.userId);
+      // foundRoom?.updateSockets(sockets);
       client.join(room.roomId);
       client.emit('room-state', room);
       client.emit('get-chat', chat.chat);
+      client.emit('timer-update', { id, timerCount });
     }
   }
 
@@ -130,8 +134,8 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      const isGameStarted = room.startNewGame();
       const sockets = await this.server.in(room.roomId).fetchSockets();
+      const isGameStarted = room.startNewGame(this.server);
       if (isGameStarted) {
         this.gameService.sendPersonalStates(sockets, room);
         this.gameService.sendWinner(sockets, null);
@@ -150,7 +154,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room) {
-      const card = room.drawCard(client.data.userId);
+      const card = await room.drawCard(client.data.userId);
       const sockets = await this.server.in(room.roomId).fetchSockets();
       if (card) {
         const oneCardLeft = room.checkIsOneCardLeft();
@@ -188,15 +192,31 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() message: PlayCardClientEvent['payload'],
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
-    if (room) {
+    if (room && room.playerTurn === client.data.userId) {
       const { winner, oneCardLeft } = room.playCard(
         client.data.userId,
         message.card,
       );
       const sockets = await this.server.in(room.roomId).fetchSockets();
-      if (cardsMap[message.card].value === 'swap') {
+      if (
+        cardsMap[message.card].value !== 'swap' &&
+        cardsMap[message.card].value !== '8'
+      ) {
+        this.gameService.sendPlayerPlayedCard(sockets, client.data.userId);
+      } else if (cardsMap[message.card].value === 'swap') {
         const player = room.findUserById(client.data.userId);
         if (player) {
+          if (player.cards.length === 1) {
+            this.gameService.sendWinner(sockets, player.id);
+            if (room.timer) {
+              clearInterval(room.timer);
+              room.timer = null;
+            }
+            return;
+          }
+          if (player.cards.length === 2) {
+            this.gameService.sendOneCardLeft(sockets, true);
+          }
           const swapPayload = room.playSwap(cardsMap[message.card], player);
           this.gameService.sendSwapCardPlayed(sockets, swapPayload);
           setTimeout(() => {
@@ -205,6 +225,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       } else if (cardsMap[message.card].value === '8') {
         this.gameService.sendIsChooseColor(sockets, false, client);
+        this.gameService.sendPlayerPlayedCard(sockets, client.data.userId);
         this.gameService.sendPersonalStates(sockets, room);
       } else {
         this.gameService.sendPersonalStates(sockets, room);
@@ -246,6 +267,22 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         chat.addMessage(client.data.userId, message.message);
         const sockets = await this.server.in(room.roomId).fetchSockets();
         this.gameService.sendUpdatedChat(sockets, chat.chat);
+      }
+    }
+  }
+
+  @SubscribeMessage('emoji')
+  async onEmoji(
+    @ConnectedSocket()
+    client: Socket<ClientToServerEvents>,
+    @MessageBody() message: { emojiIndex: number },
+  ) {
+    const room = this.gameService.findRoom('user', client.data.userId);
+    if (room) {
+      const player = room.findUserById(client.data.userId);
+      if (player) {
+        const sockets = await this.server.in(room.roomId).fetchSockets();
+        this.gameService.sendEmoji(sockets, player.id, message.emojiIndex);
       }
     }
   }

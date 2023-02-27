@@ -76,7 +76,12 @@ export class GameService {
       const personalRoomState = room.getUserState(userId);
       if (personalRoomState && player && chat) {
         player.online = true;
-        return { room: personalRoomState, chat };
+        return {
+          room: personalRoomState,
+          chat,
+          id: room.playerTurn,
+          timerCount: room.timerCount,
+        };
       }
     }
     return null;
@@ -193,9 +198,22 @@ export class GameService {
     });
   }
 
+  sendPlayerPlayedCard(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    playerId: string,
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('player-played-card', { id: playerId });
+    });
+  }
+
   cleanRoomAndChat(roomId: string) {
     const room = this.findRoom('room', roomId);
     if (room && room.players.length === 0) {
+      if (room.timer) {
+        clearInterval(room.timer);
+        room.timer = null;
+      }
       const roomIndex = this.rooms.findIndex((room) => room.roomId === roomId);
       this.rooms.splice(roomIndex, 1);
       const chat = this.findChat(roomId);
@@ -206,5 +224,18 @@ export class GameService {
         this.chats.splice(chatIndex, 1);
       }
     }
+  }
+
+  sendEmoji(
+    sockets: RemoteSocket<ServerToClientEvents, any>[],
+    playerId: string,
+    emojiIndex: number,
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('emoji', {
+        id: playerId,
+        emojiIndex,
+      });
+    });
   }
 }

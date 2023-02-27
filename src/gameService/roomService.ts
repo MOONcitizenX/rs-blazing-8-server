@@ -1,6 +1,9 @@
 import { randomUUID } from 'crypto';
 import { pick, shuffle } from 'lodash';
+import { RemoteSocket, Server } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { Card, cardsMap } from 'src/data/cardsMap';
+import { ServerToClientEvents } from 'src/gateway/socketTypes/ServerToClientEvents';
 
 export type RoomStatus = 'lobby' | 'playing';
 
@@ -28,11 +31,16 @@ export class Room {
   topCard: Card['cardId'] | null;
   private maxPlayers = 5;
   private minPlayers = 2;
+  timer: NodeJS.Timer | null = null;
+  timerCount = 30;
+  private server!: Server<ServerToClientEvents>;
 
   roomId: string;
   status: RoomStatus;
   direction: 'CW' | 'ACW';
   playerTurn: string;
+  isCurrentPlayerDraw = false;
+  isCurrentPlayerPass = false;
   private winner: string;
   private oneCardLeft: boolean;
   players: Player[];
@@ -58,11 +66,12 @@ export class Room {
     this.playerTurn = this.winner || this.players[0].id;
   }
 
-  startNewGame() {
+  startNewGame(server: Server<ServerToClientEvents>) {
     if (
       this.players.length >= this.minPlayers &&
       this.players.length <= this.maxPlayers
     ) {
+      this.server = server;
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
@@ -72,7 +81,11 @@ export class Room {
           player.cards = this.closedDeck.splice(-5, 5);
         }
       });
-      const startCard = this.closedDeck.pop();
+      let startCard = this.closedDeck.pop();
+      while (startCard === 'SR' || startCard === 'SG') {
+        this.closedDeck.unshift(startCard);
+        startCard = this.closedDeck.pop();
+      }
       if (startCard) {
         this.openDeck = [startCard];
         this.topCard = startCard;
@@ -84,6 +97,7 @@ export class Room {
       this.playerTurn = isWinnerInGame ? this.winner : this.players[0].id;
       this.status = 'playing';
       this.direction = 'CW';
+      this.startOrResetTimer();
 
       return true;
     } else {
@@ -143,14 +157,25 @@ export class Room {
     };
   }
 
-  drawCard(userId: string) {
-    const card = this.closedDeck.pop();
-    if (card) {
-      const player = this.findUserById(userId);
-      if (player) {
-        player.cards.push(card);
+  async drawCard(userId: string) {
+    if (!this.isCurrentPlayerDraw) {
+      const card = this.closedDeck.pop();
+      if (card) {
+        const player = this.findUserById(userId);
+        if (player) {
+          player.cards.push(card);
+        }
+        this.isCurrentPlayerDraw = true;
+        const sockets = await this.server.in(this.roomId).fetchSockets();
+        sockets.forEach((socket) => {
+          if (socket.data.userId === userId) {
+            socket.emit('card-draw', { id: userId, cardId: card });
+          } else {
+            socket.emit('card-draw', { id: userId });
+          }
+        });
+        return card;
       }
-      return card;
     }
     return null;
   }
@@ -159,7 +184,13 @@ export class Room {
     const player = this.findUserById(userId);
     const playerCard = cardsMap[cardName];
     const topCard = this.topCard ? cardsMap[this.topCard] : null;
-    if (topCard && player && this.checkIsCardPlayable(playerCard, topCard)) {
+    const isPlayerTurn = userId === this.playerTurn;
+    if (
+      topCard &&
+      player &&
+      isPlayerTurn &&
+      this.checkIsCardPlayable(playerCard, topCard)
+    ) {
       this.playCardOnBehavior(playerCard, player);
       this.movePlayerTurn();
     }
@@ -210,10 +241,6 @@ export class Room {
         this.playKing(playerCard, player);
         break;
       }
-      // case 'swap': {
-      //   this.playSwap(playerCard, player);
-      //   break;
-      // }
       case '8': {
         this.playRegularCard(playerCard, player);
         break;
@@ -223,7 +250,7 @@ export class Room {
 
   playRegularCard(card: Card, player: Player) {
     this.topCard = card.cardId;
-    this.openDeck.unshift(this.topCard);
+    this.openDeck.push(this.topCard);
     this.removeCardFromHand(card, player);
     console.log(player);
   }
@@ -242,7 +269,7 @@ export class Room {
     this.playRegularCard(card, player);
     const otherPlayers = this.players.filter((user) => user.id !== player.id);
     if (this.closedDeck.length <= this.players.length) {
-      const cardsFromBottom = this.openDeck.splice(0, this.players.length);
+      const cardsFromBottom = this.openDeck.splice(0, this.players.length - 1);
       this.closedDeck.push(...cardsFromBottom);
     }
     otherPlayers.forEach((user) => this.drawCard(user.id));
@@ -264,13 +291,18 @@ export class Room {
     } else {
       nextPlayer = this.players[currentPlayerIndex - 1];
     }
-    this.openDeck.unshift(card.cardId);
+    this.openDeck.push(card.cardId);
     this.removeCardFromHand(card, player);
 
-    this.swapCards(
-      currentPlayerIndex,
-      this.players.findIndex((pl) => pl.id === nextPlayer.id),
-    );
+    // this.swapCards(
+    //   currentPlayerIndex,
+    //   this.players.findIndex((pl) => pl.id === nextPlayer.id),
+    // );
+
+    const tempCards = this.players[currentPlayerIndex].cards;
+    this.players[currentPlayerIndex].cards = nextPlayer?.cards;
+    nextPlayer.cards = tempCards;
+
     const response = {
       playerId: player.id,
       nextPlayerId: nextPlayer.id,
@@ -280,32 +312,30 @@ export class Room {
     return response;
   }
 
-  swapCards(player1index, player2index) {
-    [this.players[player1index].cards, this.players[player2index].cards] = [
-      this.players[player2index].cards,
-      this.players[player1index].cards,
-    ];
-  }
-
   removeCardFromHand(playerCard: Card, player: Player) {
-    const cardIndex = player.cards.findIndex(
-      (card) =>
-        cardsMap[card].value === playerCard.value &&
-        cardsMap[card].color === playerCard.color,
-    );
+    const cardIndex = player.cards.findIndex((card) => {
+      if (cardsMap[card].value === '8') {
+        return cardsMap[card].value === playerCard.value;
+      } else {
+        return (
+          cardsMap[card].value === playerCard.value &&
+          cardsMap[card].color === playerCard.color
+        );
+      }
+    });
     player.cards.splice(cardIndex, 1);
   }
 
-  movePlayerTurn() {
+  movePlayerTurn = () => {
     const currentPlayerIndex = this.players.findIndex(
       (player) => player.id === this.playerTurn,
     );
     if (currentPlayerIndex !== undefined || currentPlayerIndex !== null) {
       if (this.direction === 'CW') {
         this.playerTurn =
-          currentPlayerIndex < this.players.length - 1
-            ? this.players[currentPlayerIndex + 1].id
-            : this.players[0].id;
+          currentPlayerIndex === this.players.length - 1
+            ? this.players[0].id
+            : this.players[currentPlayerIndex + 1].id;
       }
       if (this.direction === 'ACW') {
         this.playerTurn =
@@ -313,19 +343,53 @@ export class Room {
             ? this.players[this.players.length - 1].id
             : this.players[currentPlayerIndex - 1].id;
       }
+      this.isCurrentPlayerDraw = false;
+      this.startOrResetTimer();
     }
+  };
+
+  resetRoom(id: string) {
+    this.closedDeck = [];
+    this.openDeck = [];
+    this.status = 'lobby';
+    this.direction = 'CW';
+    this.topCard = null;
+    this.winner = id;
+    this.oneCardLeft = false;
   }
 
   checkIsWinner() {
     const winner = this.players.find((player) => player.cards.length === 0);
     if (winner) {
-      this.closedDeck = [];
-      this.openDeck = [];
-      this.status = 'lobby';
-      this.direction = 'CW';
-      this.topCard = null;
-      this.winner = winner.id;
-      this.oneCardLeft = false;
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+      this.resetRoom(winner.id);
+    }
+    if (this.closedDeck.length === 0) {
+      const moveAbility: boolean[] = [];
+      const topCard = this.topCard ? cardsMap[this.topCard] : null;
+      this.players.forEach((player) => {
+        moveAbility.push(
+          player.cards.some((card) => {
+            const [value, suit] = card.split('');
+            if (value === topCard?.value || value === '8') {
+              return true;
+            } else if (suit === topCard?.color) {
+              return true;
+            }
+          }),
+        );
+      });
+      const isNoMoreMoves = moveAbility.every((el) => el === false);
+      if (isNoMoreMoves) {
+        const winner = this.players.sort(
+          (a, b) => a.cards.length - b.cards.length,
+        )[0];
+        this.resetRoom(winner.id);
+        return winner;
+      }
     }
     return winner;
   }
@@ -335,5 +399,40 @@ export class Room {
       (player) => player.cards.length === 1,
     );
     return oneCardLeft;
+  }
+
+  async startOrResetTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+      this.timerCount = 30;
+    }
+    this.timer = setInterval(() => {
+      if (this.timerCount <= 0) {
+        if (!this.isCurrentPlayerDraw) {
+          this.drawCard(this.playerTurn);
+        }
+        this.movePlayerTurn();
+      }
+      this.timerCount -= 1;
+    }, 1000);
+
+    const sockets = await this.server.in(this.roomId).fetchSockets();
+    this.sendPersonalStates(sockets);
+    sockets.forEach((socket) => {
+      socket.emit('timer-update', {
+        id: this.playerTurn,
+        timerCount: this.timerCount,
+      });
+    });
+  }
+
+  sendPersonalStates(
+    this: Room,
+    sockets: RemoteSocket<DefaultEventsMap, any>[],
+  ) {
+    sockets.forEach((socket) => {
+      socket.emit('room-state', this.getUserState(socket.data.userId));
+    });
   }
 }
