@@ -271,14 +271,14 @@ export class Room {
     otherPlayers.forEach(async (user) => {
       const card = this.closedDeck.pop();
       if (card) {
-        const player = this.findUserById(user.id);
-        if (player) {
-          player.cards.push(card);
-        }
-        this.isCurrentPlayerDraw = true;
+        user.cards.push(card);
         const sockets = await this.server.in(this.roomId).fetchSockets();
         sockets.forEach((socket) => {
-          socket.emit('card-draw', { id: user.id });
+          if (socket.data.userId === user.id) {
+            socket.emit('card-draw', { id: user.id, cardId: card });
+          } else {
+            socket.emit('card-draw', { id: user.id });
+          }
         });
       }
     });
