@@ -75,11 +75,8 @@ export class Room {
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
-      this.players[0].cards = ['SR'];
-      this.players.forEach((player, index) => {
-        if (index !== 0) {
-          player.cards = this.closedDeck.splice(-5, 5);
-        }
+      this.players.forEach((player) => {
+        player.cards = this.closedDeck.splice(-5, 5);
       });
       let startCard = this.closedDeck.pop();
       while (startCard === 'SR' || startCard === 'SG') {
@@ -292,11 +289,6 @@ export class Room {
     }
     this.openDeck.push(card.cardId);
     this.removeCardFromHand(card, player);
-
-    // this.swapCards(
-    //   currentPlayerIndex,
-    //   this.players.findIndex((pl) => pl.id === nextPlayer.id),
-    // );
 
     const tempCards = this.players[currentPlayerIndex].cards;
     this.players[currentPlayerIndex].cards = nextPlayer?.cards;
