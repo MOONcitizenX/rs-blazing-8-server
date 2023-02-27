@@ -193,6 +193,10 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const room = this.gameService.findRoom('user', client.data.userId);
     if (room && room.playerTurn === client.data.userId) {
+      const { winner, oneCardLeft } = room.playCard(
+        client.data.userId,
+        message.card,
+      );
       const sockets = await this.server.in(room.roomId).fetchSockets();
       if (
         cardsMap[message.card].value !== 'swap' &&
@@ -203,7 +207,12 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         const player = room.findUserById(client.data.userId);
         if (player) {
           if (player.cards.length === 1) {
-            this.gameService.sendWinner(sockets, player.id);
+            room.removeCardFromHand(cardsMap[message.card], player);
+            const winner = room.checkIsWinner();
+            this.gameService.sendPersonalStates(sockets, room);
+            if (winner) {
+              this.gameService.sendWinner(sockets, winner.id);
+            }
             return;
           }
           if (player.cards.length === 2) {
@@ -222,11 +231,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       } else {
         this.gameService.sendPersonalStates(sockets, room);
       }
-
-      const { winner, oneCardLeft } = room.playCard(
-        client.data.userId,
-        message.card,
-      );
 
       if (oneCardLeft) {
         this.gameService.sendOneCardLeft(sockets, true);
