@@ -225,7 +225,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
           }, 500);
         }
       } else if (cardsMap[message.card].value === '8') {
-        this.gameService.sendIsChooseColor(sockets, false, client);
+        this.gameService.sendIsChooseColor(sockets, false);
         this.gameService.sendPlayerPlayedCard(sockets, client.data.userId);
         this.gameService.sendPersonalStates(sockets, room);
       } else {
