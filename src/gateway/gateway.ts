@@ -31,9 +31,20 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
   constructor(private gameService: GameService) {}
-  handleDisconnect(client: Socket) {
-    console.log(client.data.userId, ' disconnected');
-    // const roomState = this.gameService.reconnect(client.data.userId);
+  async handleDisconnect(client: Socket) {
+    const userId = client.data.userId;
+    console.log(userId, ' disconnected');
+    const room = this.gameService.findRoom('user', userId);
+    if (room) {
+      const player = room.findUserById(userId);
+      if (player) {
+        const sockets = await this.server.in(room.roomId).fetchSockets();
+        player.online = false;
+        sockets.forEach((socket) => {
+          socket.emit('room-state', room.getUserState(socket.data.userId));
+        });
+      }
+    }
   }
   handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');

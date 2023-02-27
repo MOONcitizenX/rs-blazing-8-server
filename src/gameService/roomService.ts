@@ -268,7 +268,20 @@ export class Room {
       const cardsFromBottom = this.openDeck.splice(0, this.players.length - 1);
       this.closedDeck.push(...cardsFromBottom);
     }
-    otherPlayers.forEach(async (user) => await this.drawCard(user.id));
+    otherPlayers.forEach(async (user) => {
+      const card = this.closedDeck.pop();
+      if (card) {
+        const player = this.findUserById(user.id);
+        if (player) {
+          player.cards.push(card);
+        }
+        this.isCurrentPlayerDraw = true;
+        const sockets = await this.server.in(this.roomId).fetchSockets();
+        sockets.forEach((socket) => {
+          socket.emit('card-draw', { id: user.id });
+        });
+      }
+    });
   }
 
   playSwap(card: Card, player: Player) {

@@ -1,8 +1,8 @@
 import { ChatMessage } from 'src/chatService/chatService';
-import { Player, RoomStateType } from 'src/gameService/roomService';
+import { Player } from 'src/gameService/roomService';
 
 export interface ServerToClientEvents {
-  'room-state': (room: RoomStateType | null) => void;
+  'room-state': (room: any) => void;
 
   'choose-color': (isChooseColor: boolean) => void;
 
