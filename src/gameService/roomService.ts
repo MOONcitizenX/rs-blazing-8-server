@@ -75,7 +75,7 @@ export class Room {
       const cards = Object.keys(cardsMap);
       const shuffledCards = shuffle(cards);
       this.closedDeck = shuffledCards;
-      this.players[0].cards = ['SR', 'SG', '8B'];
+      this.players[0].cards = ['SR'];
       this.players.forEach((player, index) => {
         if (index !== 0) {
           player.cards = this.closedDeck.splice(-5, 5);
@@ -252,7 +252,6 @@ export class Room {
     this.topCard = card.cardId;
     this.openDeck.push(this.topCard);
     this.removeCardFromHand(card, player);
-    console.log(player);
   }
 
   playJack(card: Card, player: Player) {
