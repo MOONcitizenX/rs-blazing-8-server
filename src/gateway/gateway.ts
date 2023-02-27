@@ -208,6 +208,10 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (player) {
           if (player.cards.length === 1) {
             this.gameService.sendWinner(sockets, player.id);
+            if (room.timer) {
+              clearInterval(room.timer);
+              room.timer = null;
+            }
             return;
           }
           if (player.cards.length === 2) {
