@@ -411,15 +411,25 @@ export class Room {
       this.timer = null;
       this.timerCount = 30;
     }
-    this.timer = setInterval(() => {
-      if (this.timerCount <= 0) {
-        if (!this.isCurrentPlayerDraw) {
-          this.drawCard(this.playerTurn);
+    const currentPlayer = this.players.find(
+      (player) => player.id === this.playerTurn,
+    );
+    if (currentPlayer && currentPlayer.online) {
+      this.timer = setInterval(() => {
+        if (this.timerCount <= 0) {
+          if (!this.isCurrentPlayerDraw) {
+            this.drawCard(this.playerTurn);
+          }
+          this.movePlayerTurn();
         }
-        this.movePlayerTurn();
+        this.timerCount -= 1;
+      }, 1000);
+    } else {
+      if (!this.isCurrentPlayerDraw) {
+        this.drawCard(this.playerTurn);
       }
-      this.timerCount -= 1;
-    }, 1000);
+      this.movePlayerTurn();
+    }
 
     const sockets = await this.server.in(this.roomId).fetchSockets();
     this.sendPersonalStates(sockets);
