@@ -268,7 +268,7 @@ export class Room {
       const cardsFromBottom = this.openDeck.splice(0, this.players.length - 1);
       this.closedDeck.push(...cardsFromBottom);
     }
-    otherPlayers.forEach((user) => this.drawCard(user.id));
+    otherPlayers.forEach(async (user) => await this.drawCard(user.id));
   }
 
   playSwap(card: Card, player: Player) {
