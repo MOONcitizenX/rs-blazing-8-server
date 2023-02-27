@@ -203,12 +203,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
         const player = room.findUserById(client.data.userId);
         if (player) {
           if (player.cards.length === 1) {
-            room.removeCardFromHand(cardsMap[message.card], player);
-            const winner = room.checkIsWinner();
-            this.gameService.sendPersonalStates(sockets, room);
-            if (winner) {
-              this.gameService.sendWinner(sockets, winner.id);
-            }
+            this.gameService.sendWinner(sockets, player.id);
             return;
           }
           if (player.cards.length === 2) {
