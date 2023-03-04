@@ -23,7 +23,7 @@ const PORT = Number(process.env.PORT) || 5555;
 
 @WebSocketGateway(PORT, {
   cors: {
-    origin: '*',
+    origin: ['https://blazing-8s-rs.netlify.app/', 'http://localhost'],
   },
 })
 export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
