@@ -46,7 +46,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
-  handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket, ...args: any[]) {
     console.log(client.data.userId, ' connected');
     const clientRoom = this.gameService.reconnect(client.data.userId);
     if (clientRoom) {
@@ -54,6 +54,22 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       // const sockets = await this.server.in(room.roomId).fetchSockets();
       // const foundRoom = this.gameService.findRoom('user', client.data.userId);
       // foundRoom?.updateSockets(sockets);
+
+      const userId = client.data.userId;
+      const roomState = this.gameService.findRoom('user', userId);
+      if (roomState) {
+        const player = roomState.findUserById(userId);
+        if (player) {
+          const sockets = await this.server.in(roomState.roomId).fetchSockets();
+          sockets.forEach((socket) => {
+            socket.emit(
+              'room-state',
+              roomState.getUserState(socket.data.userId),
+            );
+          });
+        }
+      }
+
       client.join(room.roomId);
       client.emit('room-state', room);
       client.emit('get-chat', chat.chat);
