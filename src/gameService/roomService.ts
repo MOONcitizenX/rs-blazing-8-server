@@ -424,6 +424,8 @@ export class Room {
         }
         this.timerCount -= 1;
       }, 1000);
+    } else if (this.players.every((pl) => !pl.online)) {
+      return;
     } else {
       if (!this.isCurrentPlayerDraw) {
         this.drawCard(this.playerTurn);
