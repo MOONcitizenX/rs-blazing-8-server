@@ -206,7 +206,10 @@ export class GameService {
 
   cleanRoomAndChat(roomId: string) {
     const room = this.findRoom('room', roomId);
-    if (room && room.players.length === 0) {
+    if (
+      room &&
+      (room.players.length === 0 || room?.players.every((pla) => !pla.online))
+    ) {
       if (room.timer) {
         clearInterval(room.timer);
         room.timer = null;
