@@ -11,6 +11,12 @@ import { Player, Room } from './roomService';
 
 @Injectable()
 export class GameService {
+  constructor() {
+    setInterval(() => {
+      this.rooms.forEach((r) => this.cleanRoomAndChat(r.roomId));
+    }, 60000);
+  }
+
   rooms: Room[] = [];
   chats: Chat[] = [];
 

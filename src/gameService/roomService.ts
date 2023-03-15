@@ -425,6 +425,11 @@ export class Room {
         this.timerCount -= 1;
       }, 1000);
     } else if (this.players.every((pl) => !pl.online)) {
+      setTimeout(() => {
+        if (this.players.every((pl) => !pl.online)) {
+          this.players = [];
+        }
+      }, 60000);
       return;
     } else {
       if (!this.isCurrentPlayerDraw) {
